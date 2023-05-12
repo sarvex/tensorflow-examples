@@ -43,9 +43,7 @@ def main(download_path):
       'facades.tar.gz', cache_subdir=download_path,
       origin=_URL, extract=True)
 
-  path_to_folder = os.path.join(os.path.dirname(path_to_zip), 'facades/')
-
-  return path_to_folder
+  return os.path.join(os.path.dirname(path_to_zip), 'facades/')
 
 if __name__ == '__main__':
   app.run(_main)

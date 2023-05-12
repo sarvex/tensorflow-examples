@@ -24,8 +24,7 @@ from tensorflow_examples.lite.model_maker.core import compat
 def generate_elements(ds):
   """Generates elements from `tf.data.dataset`."""
   if compat.get_tf_behavior() == 2:
-    for element in ds.as_numpy_iterator():
-      yield element
+    yield from ds.as_numpy_iterator()
   else:
     iterator = tf.compat.v1.data.make_one_shot_iterator(ds)
     next_element = iterator.get_next()

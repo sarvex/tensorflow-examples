@@ -43,9 +43,10 @@ class KeypointTracker(Tracker):
 
     sim_matrix = []
     for person in persons:
-      row = []
-      for track in self._tracks:
-        row.append(self._object_keypoint_similarity(person, track))
+      row = [
+          self._object_keypoint_similarity(person, track)
+          for track in self._tracks
+      ]
       sim_matrix.append(row)
     return sim_matrix
 

@@ -229,7 +229,7 @@ def export(checkpoint_path: str, input_config: input_config_pb2.InputConfig,
   logger = tf.get_logger()
   if not export_dir:
     export_dir = os.path.join(FLAGS.model_dir, 'export', str(int(time.time())))
-  logger.info('Exporting model to dir: {}'.format(export_dir))
+  logger.info(f'Exporting model to dir: {export_dir}')
   save_model(
       checkpoint_path=checkpoint_path,
       export_dir=export_dir,
@@ -280,7 +280,7 @@ def main(_):
       vocab_file_dir=FLAGS.vocab_dir,
       batch_size=FLAGS.batch_size)
 
-  logger.info('Build keras model for mode: {}.'.format(FLAGS.run_mode))
+  logger.info(f'Build keras model for mode: {FLAGS.run_mode}.')
   model = build_keras_model(
       input_config=input_config, model_config=model_config)
 
@@ -293,8 +293,7 @@ def main(_):
         steps_per_epoch=FLAGS.steps_per_epoch,
         epochs=FLAGS.num_epochs,
         eval_steps=FLAGS.num_eval_steps)
-    latest_checkpoint_path = tf.train.latest_checkpoint(FLAGS.model_dir)
-    if latest_checkpoint_path:
+    if latest_checkpoint_path := tf.train.latest_checkpoint(FLAGS.model_dir):
       export(
           checkpoint_path=latest_checkpoint_path,
           input_config=input_config,
@@ -310,7 +309,7 @@ def main(_):
         model_config=model_config,
         export_dir=FLAGS.export_dir)
   else:
-    logger.error('Unsupported launcher run model {}.'.format(FLAGS.run_mode))
+    logger.error(f'Unsupported launcher run model {FLAGS.run_mode}.')
 
 
 if __name__ == '__main__':

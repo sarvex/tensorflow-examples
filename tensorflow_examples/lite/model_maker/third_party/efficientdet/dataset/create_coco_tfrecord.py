@@ -166,33 +166,27 @@ def create_tf_example(image,
         output_io = io.BytesIO()
         pil_image.save(output_io, format='PNG')
         encoded_mask_png.append(output_io.getvalue())
-    feature_dict.update({
-        'image/object/bbox/xmin':
-            tfrecord_util.float_list_feature(xmin),
-        'image/object/bbox/xmax':
-            tfrecord_util.float_list_feature(xmax),
-        'image/object/bbox/ymin':
-            tfrecord_util.float_list_feature(ymin),
-        'image/object/bbox/ymax':
-            tfrecord_util.float_list_feature(ymax),
+    feature_dict |= {
+        'image/object/bbox/xmin': tfrecord_util.float_list_feature(xmin),
+        'image/object/bbox/xmax': tfrecord_util.float_list_feature(xmax),
+        'image/object/bbox/ymin': tfrecord_util.float_list_feature(ymin),
+        'image/object/bbox/ymax': tfrecord_util.float_list_feature(ymax),
         'image/object/class/text':
-            tfrecord_util.bytes_list_feature(category_names),
+        tfrecord_util.bytes_list_feature(category_names),
         'image/object/class/label':
-            tfrecord_util.int64_list_feature(category_ids),
-        'image/object/is_crowd':
-            tfrecord_util.int64_list_feature(is_crowd),
-        'image/object/area':
-            tfrecord_util.float_list_feature(area),
-    })
+        tfrecord_util.int64_list_feature(category_ids),
+        'image/object/is_crowd': tfrecord_util.int64_list_feature(is_crowd),
+        'image/object/area': tfrecord_util.float_list_feature(area),
+    }
     if include_masks:
       feature_dict['image/object/mask'] = (
           tfrecord_util.bytes_list_feature(encoded_mask_png))
   if caption_annotations:
-    captions = []
-    for caption_annotation in caption_annotations:
-      captions.append(caption_annotation['caption'].encode('utf8'))
-    feature_dict.update(
-        {'image/caption': tfrecord_util.bytes_list_feature(captions)})
+    captions = [
+        caption_annotation['caption'].encode('utf8')
+        for caption_annotation in caption_annotations
+    ]
+    feature_dict['image/caption'] = tfrecord_util.bytes_list_feature(captions)
 
   example = tf.train.Example(features=tf.train.Features(feature=feature_dict))
   return key, example, num_annotations_skipped
@@ -300,10 +294,7 @@ def _create_tf_record_from_coco_annotations(image_info_file,
         _load_caption_annotations(caption_annotations_file))
 
   def _get_object_annotation(image_id):
-    if img_to_obj_annotation:
-      return img_to_obj_annotation[image_id]
-    else:
-      return None
+    return img_to_obj_annotation[image_id] if img_to_obj_annotation else None
 
   def _get_caption_annotation(image_id):
     if img_to_caption_annotation:

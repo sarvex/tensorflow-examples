@@ -46,6 +46,7 @@ graph definition [default: model.ascii]
 output_node_prefix: the prefix to use for output nodes. [default: output_node]
 
 """
+
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -107,7 +108,7 @@ if args.theano_backend and args.quantize:
 
 output_fld = args.input_fld if not args.output_fld else args.output_fld
 if not args.output_model_file:
-  args.output_model_file = str(Path(args.input_model_file).name) + '.pb'
+  args.output_model_file = f'{str(Path(args.input_model_file).name)}.pb'
 Path(output_fld).mkdir(parents=True, exist_ok=True)
 weight_file_path = str(Path(args.input_fld) / args.input_model_file)
 
@@ -155,8 +156,7 @@ sess = K.get_session()
 if args.graph_def:
   f = args.output_graphdef_file
   tf.io.write_graph(sess.graph.as_graph_def(), output_fld, f, as_text=True)
-  print('saved the graph definition in ascii format at: ',
-        str(Path(output_fld) / f))
+  print('saved the graph definition in ascii format at: ', Path(output_fld) / f)
 
 # convert variables to constants and save
 
@@ -175,5 +175,7 @@ else:
       sess, sess.graph.as_graph_def(), pred_node_names)
 tf.io.write_graph(
     constant_graph, output_fld, args.output_model_file, as_text=False)
-print('saved the freezed graph (ready for inference) at: ',
-      str(Path(output_fld) / args.output_model_file))
+print(
+    'saved the freezed graph (ready for inference) at: ',
+    Path(output_fld) / args.output_model_file,
+)

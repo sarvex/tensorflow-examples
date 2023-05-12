@@ -190,17 +190,17 @@ class ImageClassifierTest(tf.test.TestCase):
                                            model,
                                            expected_json_file=None):
     model_name = 'model_with_metadata'
-    tflite_output_file = os.path.join(self.get_temp_dir(),
-                                      '%s.tflite' % model_name)
-    json_output_file = os.path.join(self.get_temp_dir(), '%s.json' % model_name)
+    tflite_output_file = os.path.join(self.get_temp_dir(), f'{model_name}.tflite')
+    json_output_file = os.path.join(self.get_temp_dir(), f'{model_name}.json')
     labels_output_file = os.path.join(self.get_temp_dir(), 'labels.txt')
 
     model.export(
         self.get_temp_dir(),
-        '%s.tflite' % model_name,
+        f'{model_name}.tflite',
         quantization_config=None,
         with_metadata=True,
-        export_metadata_json_file=True)
+        export_metadata_json_file=True,
+    )
 
     self.assertTrue(os.path.isfile(tflite_output_file))
     self.assertGreater(os.path.getsize(tflite_output_file), 0)

@@ -50,9 +50,7 @@ def batch_map_fn(map_fn, inputs, *args):
     # handle dynamic batch size: tf.vectorized_map is faster than tf.map_fn.
     return tf.vectorized_map(map_fn, inputs, *args)
 
-  outputs = []
-  for i in range(batch_size):
-    outputs.append(map_fn([x[i] for x in inputs]))
+  outputs = [map_fn([x[i] for x in inputs]) for i in range(batch_size)]
   return [tf.stack(y) for y in zip(*outputs)]
 
 
@@ -184,7 +182,7 @@ def nms(params, boxes: T, scores: T, classes: T,
     iou_thresh = 1.0
     score_thresh = nms_configs['score_thresh'] or 0.001
   else:
-    raise ValueError('Inference has invalid nms method {}'.format(method))
+    raise ValueError(f'Inference has invalid nms method {method}')
 
   # TF API's sigma is twice as the paper's value, so here we divide it by 2:
   # https://github.com/tensorflow/tensorflow/issues/40253.
@@ -264,7 +262,7 @@ def tflite_nms_implements_signature(params):
   max_detections = params['tflite_max_detections']
 
   implements_signature = [
-      'name: "%s"' % TFLITE_DETECTION_POSTPROCESS_FUNC,
+      f'name: "{TFLITE_DETECTION_POSTPROCESS_FUNC}"',
       'attr { key: "max_detections" value { i: %d } }' % max_detections,
       'attr { key: "max_classes_per_detection" value { i: %d } }' %
       TFLITE_MAX_CLASSES_PER_DETECTION,
@@ -276,7 +274,7 @@ def tflite_nms_implements_signature(params):
       'attr { key: "x_scale" value { f: %f } }' % scale_value,
       'attr { key: "h_scale" value { f: %f } }' % scale_value,
       'attr { key: "w_scale" value { f: %f } }' % scale_value,
-      'attr { key: "num_classes" value { i: %d } }' % params['num_classes']
+      'attr { key: "num_classes" value { i: %d } }' % params['num_classes'],
   ]
   implements_signature = ' '.join(implements_signature)
 
@@ -450,12 +448,12 @@ def per_class_nms(params, boxes, scores, classes, image_scales=None):
 
     _, indices = tf.math.top_k(nms_scores_cls, k=max_output_size, sorted=True)
 
-    return tuple((
+    return (
         tf.gather(nms_boxes_cls, indices),
         tf.gather(nms_scores_cls, indices),
         tf.gather(nms_classes_cls, indices),
-        tf.minimum(max_output_size, tf.reduce_sum(nms_valid_len_cls))))
-    # end of single_batch_fn
+        tf.minimum(max_output_size, tf.reduce_sum(nms_valid_len_cls)),
+    )
 
   nms_boxes, nms_scores, nms_classes, nms_valid_len = batch_map_fn(
       single_batch_fn, [boxes, scores, classes])
@@ -572,10 +570,7 @@ def generate_detections(params,
       detections_bs.append(detections)
     return tf.stack(detections_bs, axis=0, name='detections')
 
-  if pre_class_nms:
-    postprocess = postprocess_per_class
-  else:
-    postprocess = postprocess_global
+  postprocess = postprocess_per_class if pre_class_nms else postprocess_global
   nms_boxes_bs, nms_scores_bs, nms_classes_bs, _ = postprocess(
       params, cls_outputs, box_outputs, image_scales)
 

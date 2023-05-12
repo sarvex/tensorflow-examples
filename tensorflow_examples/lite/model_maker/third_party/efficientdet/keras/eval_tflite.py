@@ -115,14 +115,13 @@ class LiteRunner(object):
       #   detection_boxes: a float32 tensor of shape [1, num_boxes, 4] with box
       #     locations
       return [get_output(i) for i in range(output_size)]
-    else:
-      # TFLite model only contains network without post-processing.
-      num_boxes = int(output_size / 2)
-      cls_outputs, box_outputs = [], []
-      for i in range(num_boxes):
-        cls_outputs.append(get_output(i))
-        box_outputs.append(get_output(i + num_boxes))
-      return cls_outputs, box_outputs
+    # TFLite model only contains network without post-processing.
+    num_boxes = int(output_size / 2)
+    cls_outputs, box_outputs = [], []
+    for i in range(num_boxes):
+      cls_outputs.append(get_output(i))
+      box_outputs.append(get_output(i + num_boxes))
+    return cls_outputs, box_outputs
 
 
 def main(_):
@@ -184,13 +183,13 @@ def main(_):
 
   # compute the final eval results.
   metrics = evaluator.result()
-  metric_dict = {}
-  for i, name in enumerate(evaluator.metric_names):
-    metric_dict[name] = metrics[i]
-
+  metric_dict = {
+      name: metrics[i]
+      for i, name in enumerate(evaluator.metric_names)
+  }
   if label_map:
     for i, cid in enumerate(sorted(label_map.keys())):
-      name = 'AP_/%s' % label_map[cid]
+      name = f'AP_/{label_map[cid]}'
       metric_dict[name] = metrics[i + len(evaluator.metric_names)]
   print(FLAGS.model_name, metric_dict)
 

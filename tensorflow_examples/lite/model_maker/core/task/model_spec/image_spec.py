@@ -55,8 +55,7 @@ class ImageModelSpec(object):
 
   def get_default_quantization_config(self, representative_data):
     """Gets the default quantization configuration."""
-    config = configs.QuantizationConfig.for_int8(representative_data)
-    return config
+    return configs.QuantizationConfig.for_int8(representative_data)
 
 
 mobilenet_v2_spec = functools.partial(

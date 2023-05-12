@@ -13,10 +13,9 @@
 # limitations under the License.
 """Deprecated APIs."""
 
-IMPORTS = {}
 
-# pylint: disable=line-too-long
-IMPORTS[''] = """
+IMPORTS = {
+    '': """
 # Deprecated imports are kept for backward compatiblity and to be removed in
 # future versions. Please refer to public APIs for replacement:
 # https://www.tensorflow.org/lite/api_docs/python/tflite_model_maker
@@ -26,4 +25,5 @@ from tensorflow_examples.lite.model_maker.core.export_format import ExportFormat
 from tensorflow_examples.lite.model_maker.core.task import configs
 # pylint: enable=g-bad-import-order
 """
+}
 # pylint: enable=line-too-long

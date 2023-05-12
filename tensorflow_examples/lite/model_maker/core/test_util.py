@@ -49,7 +49,7 @@ def get_test_data_path(file_or_dirname):
     for f in subdirs + files:
       if f.endswith(file_or_dirname):
         return os.path.join(directory, f)
-  raise ValueError("No %s in test directory" % file_or_dirname)
+  raise ValueError(f"No {file_or_dirname} in test directory")
 
 
 def get_cache_dir(temp_dir, filename):
@@ -120,8 +120,7 @@ def build_model(input_shape, num_classes):
   else:
     raise ValueError("Model inputs should be 2D tensor or 4D tensor.")
 
-  model = tf.keras.Model(inputs=inputs, outputs=outputs)
-  return model
+  return tf.keras.Model(inputs=inputs, outputs=outputs)
 
 
 def get_dataloader(data_size, input_shape, num_classes, max_input_value=1000):

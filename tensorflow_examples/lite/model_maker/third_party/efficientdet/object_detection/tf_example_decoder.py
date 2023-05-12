@@ -164,8 +164,8 @@ class TfExampleDecoder(object):
         'groundtruth_boxes': boxes,
     }
     if self._include_mask:
-      decoded_tensors.update({
+      decoded_tensors |= {
           'groundtruth_instance_masks': masks,
           'groundtruth_instance_masks_png': parsed_tensors['image/object/mask'],
-      })
+      }
     return decoded_tensors

@@ -29,11 +29,11 @@ from tensorflow_examples.lite.model_maker.core.data_util import dataloader
 def load_image(path):
   """Loads image."""
   image_raw = tf.io.read_file(path)
-  image_tensor = tf.cond(
+  return tf.cond(
       tf.image.is_jpeg(image_raw),
       lambda: tf.image.decode_jpeg(image_raw, channels=3),
-      lambda: tf.image.decode_png(image_raw, channels=3))
-  return image_tensor
+      lambda: tf.image.decode_png(image_raw, channels=3),
+  )
 
 
 def create_data(name, data, info, label_names):
@@ -67,7 +67,7 @@ class ImageClassifierDataLoader(dataloader.ClassificationDataLoader):
 
     # Assumes the image data of the same label are in the same subdirectory,
     # gets image path and label names.
-    all_image_paths = list(tf.io.gfile.glob(data_root + r'/*/*'))
+    all_image_paths = list(tf.io.gfile.glob(f'{data_root}/*/*'))
     all_image_size = len(all_image_paths)
     if all_image_size == 0:
       raise ValueError('Image size is zero')
@@ -80,8 +80,7 @@ class ImageClassifierDataLoader(dataloader.ClassificationDataLoader):
         name for name in os.listdir(data_root)
         if os.path.isdir(os.path.join(data_root, name)))
     all_label_size = len(label_names)
-    label_to_index = dict(
-        (name, index) for index, name in enumerate(label_names))
+    label_to_index = {name: index for index, name in enumerate(label_names)}
     all_image_labels = [
         label_to_index[os.path.basename(os.path.dirname(path))]
         for path in all_image_paths

@@ -130,12 +130,12 @@ def main(_):
     tpu_cluster_resolver = None
 
   # Check data path
-  if FLAGS.mode in ('train', 'train_and_eval'):
-    if FLAGS.train_file_pattern is None:
-      raise RuntimeError('Must specify --train_file_pattern for train.')
-  if FLAGS.mode in ('eval', 'train_and_eval'):
-    if FLAGS.val_file_pattern is None:
-      raise RuntimeError('Must specify --val_file_pattern for eval.')
+  if (FLAGS.mode in ('train', 'train_and_eval')
+      and FLAGS.train_file_pattern is None):
+    raise RuntimeError('Must specify --train_file_pattern for train.')
+  if (FLAGS.mode in ('eval', 'train_and_eval')
+      and FLAGS.val_file_pattern is None):
+    raise RuntimeError('Must specify --val_file_pattern for eval.')
 
   # Parse and override hparams
   config = hparams_config.get_detection_config(FLAGS.model_name)
@@ -209,11 +209,10 @@ def main(_):
       mode=FLAGS.mode)
   config_proto = tf.ConfigProto(
       allow_soft_placement=True, log_device_placement=False)
-  if FLAGS.strategy != 'tpu':
-    if FLAGS.use_xla:
-      config_proto.graph_options.optimizer_options.global_jit_level = (
-          tf.OptimizerOptions.ON_1)
-      config_proto.gpu_options.allow_growth = True
+  if FLAGS.strategy != 'tpu' and FLAGS.use_xla:
+    config_proto.graph_options.optimizer_options.global_jit_level = (
+        tf.OptimizerOptions.ON_1)
+    config_proto.gpu_options.allow_growth = True
 
   model_dir = FLAGS.model_dir
   model_fn_instance = det_model_fn.get_model_fn(FLAGS.model_name)

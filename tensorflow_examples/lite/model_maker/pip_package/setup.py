@@ -24,6 +24,7 @@ To uninstall:
   pip uninstall tflite-model-maker
 """
 
+
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -56,7 +57,7 @@ classifiers = [
 
 # Set package version.
 if nightly:
-  project_name = '{}-nightly'.format(project_name)
+  project_name = f'{project_name}-nightly'
   version = '0.3.4'  # Version prefix, usually major.minor.micro.
   version = '{:s}.dev{:s}'.format(version, datestring)
   classifiers += [
@@ -112,9 +113,7 @@ def get_required_packages():
   # Gets model maker's required packages
   filename = 'requirements_nightly.txt' if nightly else 'requirements.txt'
   fpath = BASE_DIR.joinpath(filename)
-  required_pkgs = _read_required_packages(fpath)
-
-  return required_pkgs
+  return _read_required_packages(fpath)
 
 
 extra_options = setup_util.PackageGen(BASE_DIR, ROOT_DIR, BUILD_DIR, nightly,

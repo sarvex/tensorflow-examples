@@ -205,11 +205,10 @@ class EfficientDetModelSpec(object):
     elif strategy == 'gpus':
       ds_strategy = tf.distribute.MirroredStrategy()
       logging.info('All devices: %s', tf.config.list_physical_devices('GPU'))
+    elif tf.config.list_physical_devices('GPU'):
+      ds_strategy = tf.distribute.OneDeviceStrategy('device:GPU:0')
     else:
-      if tf.config.list_physical_devices('GPU'):
-        ds_strategy = tf.distribute.OneDeviceStrategy('device:GPU:0')
-      else:
-        ds_strategy = tf.distribute.OneDeviceStrategy('device:CPU:0')
+      ds_strategy = tf.distribute.OneDeviceStrategy('device:CPU:0')
 
     self.ds_strategy = ds_strategy
 
@@ -291,13 +290,13 @@ class EfficientDetModelSpec(object):
                        label_map: collections.OrderedDict) -> Dict[str, float]:
     """Gets the metric dict for evaluation."""
     metrics = evaluator.result(log_level=tf.compat.v1.logging.INFO)
-    metric_dict = {}
-    for i, name in enumerate(evaluator.metric_names):
-      metric_dict[name] = metrics[i]
-
+    metric_dict = {
+        name: metrics[i]
+        for i, name in enumerate(evaluator.metric_names)
+    }
     if label_map:
       for i, cid in enumerate(label_map.keys()):
-        name = 'AP_/%s' % label_map[cid]
+        name = f'AP_/{label_map[cid]}'
         metric_dict[name] = metrics[i + len(evaluator.metric_names)]
     return metric_dict
 
@@ -398,8 +397,7 @@ class EfficientDetModelSpec(object):
       progbar.update(i + 1)
     print()
 
-    metric_dict = self._get_metric_dict(evaluator, label_map)
-    return metric_dict
+    return self._get_metric_dict(evaluator, label_map)
 
   def export_saved_model(self,
                          model: tf.keras.Model,

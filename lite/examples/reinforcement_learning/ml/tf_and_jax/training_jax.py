@@ -51,29 +51,26 @@ class PolicyGradient(nn.Module):
     x = nn.Dense(features=common.BOARD_SIZE**2, name='hidden2', dtype=dtype)(x)
     x = nn.relu(x)
     x = nn.Dense(features=common.BOARD_SIZE**2, name='logits', dtype=dtype)(x)
-    policy_probabilities = nn.softmax(x)
-    return policy_probabilities
+    return nn.softmax(x)
 
 
 @functools.partial(jax.jit, static_argnums=1)
 def get_initial_params(key: np.ndarray, module: PolicyGradient):
   input_dims = (1, common.BOARD_SIZE, common.BOARD_SIZE)
   init_shape = jnp.ones(input_dims, jnp.float32)
-  initial_params = module.init(key, init_shape)['params']
-  return initial_params
+  return module.init(key, init_shape)['params']
 
 
 def create_optimizer(model_params, learning_rate: float):
   optimizer_def = optim.GradientDescent(learning_rate)
-  model_optimizer = optimizer_def.create(model_params)
-  return model_optimizer
+  return optimizer_def.create(model_params)
 
 
 def compute_loss(logits, labels, rewards):
   one_hot_labels = jax.nn.one_hot(labels, num_classes=common.BOARD_SIZE**2)
-  loss = -jnp.mean(
-      jnp.sum(one_hot_labels * jnp.log(logits), axis=-1) * jnp.asarray(rewards))
-  return loss
+  return -jnp.mean(
+      jnp.sum(one_hot_labels * jnp.log(logits), axis=-1) *
+      jnp.asarray(rewards))
 
 
 @jax.jit
@@ -94,8 +91,7 @@ def train_step(model_optimizer, game_board_log, predicted_action_log,
 
 @jax.jit
 def run_inference(model_params, board):
-  logits = PolicyGradient().apply({'params': model_params}, board)
-  return logits
+  return PolicyGradient().apply({'params': model_params}, board)
 
 
 def train_agent(iterations, modeldir, logdir):

@@ -140,7 +140,7 @@ def get_input_spec(encoder_type='cnn') -> recommendation_config.InputSpec:
   """
   etype = encoder_type.upper()
   if etype not in {'CNN', 'LSTM', 'BOW'}:
-    raise ValueError('Not support encoder_type: {}'.format(etype))
+    raise ValueError(f'Not support encoder_type: {etype}')
 
   return recommendation_config.InputSpec(
       activity_feature_groups=[

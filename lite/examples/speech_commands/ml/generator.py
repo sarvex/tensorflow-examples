@@ -57,12 +57,11 @@ def which_set(filename, validation_percentage, testing_percentage):
   percentage_hash = ((int(hash_name_hashed, 16) % (MAX_NUM_WAVS_PER_CLASS + 1))
                      * (100.0 / MAX_NUM_WAVS_PER_CLASS))
   if percentage_hash < validation_percentage:
-    result = 'validation'
+    return 'validation'
   elif percentage_hash < (testing_percentage + validation_percentage):
-    result = 'testing'
+    return 'testing'
   else:
-    result = 'training'
-  return result
+    return 'training'
 
 
 def load_wav_file(filename):
@@ -129,9 +128,10 @@ class AudioProcessor(object):
                          testing_percentage):
     """Prepares a list of the samples organized by set and label."""
     random.seed(RANDOM_SEED)
-    wanted_words_index = {}
-    for index, wanted_word in enumerate(wanted_words):
-      wanted_words_index[wanted_word] = index + 2
+    wanted_words_index = {
+        wanted_word: index + 2
+        for index, wanted_word in enumerate(wanted_words)
+    }
     self.data_index = {'validation': [], 'testing': [], 'training': []}
     unknown_index = {'validation': [], 'testing': [], 'training': []}
     all_words = {}
@@ -139,7 +139,7 @@ class AudioProcessor(object):
     for data_dir in self.data_dirs:
       search_path = os.path.join(data_dir, '*', '*.wav')
       for wav_path in tf.io.gfile.glob(search_path):
-        word = re.search('.*/([^/]+)/.*.wav', wav_path).group(1).lower()
+        word = re.search('.*/([^/]+)/.*.wav', wav_path)[1].lower()
         # Treat the '_background_noise_' folder as a special case,
         # since we expect it to contain long audio samples we mix in
         # to improve training.
@@ -155,12 +155,12 @@ class AudioProcessor(object):
         else:
           unknown_index[set_index].append({'label': word, 'file': wav_path})
       if not all_words:
-        raise Exception('No .wavs found at ' + search_path)
-      for index, wanted_word in enumerate(wanted_words):
+        raise Exception(f'No .wavs found at {search_path}')
+      for wanted_word in wanted_words:
         if wanted_word not in all_words:
-          raise Exception('Expected to find ' + wanted_word +
-                          ' in labels but only found ' +
-                          ', '.join(all_words.keys()))
+          raise Exception(
+              f'Expected to find {wanted_word} in labels but only found ' +
+              ', '.join(all_words.keys()))
     # We need an arbitrary file to load as the input for the silence samples.
     # It's multiplied by zero later, so the content doesn't matter.
     silence_wav_path = self.data_index['training'][0]['file']
@@ -184,10 +184,7 @@ class AudioProcessor(object):
     self.words_list = prepare_words_list(wanted_words)
     self.word_to_index = {}
     for word in all_words:
-      if word in wanted_words_index:
-        self.word_to_index[word] = wanted_words_index[word]
-      else:
-        self.word_to_index[word] = UNKNOWN_WORD_INDEX
+      self.word_to_index[word] = wanted_words_index.get(word, UNKNOWN_WORD_INDEX)
     self.word_to_index[SILENCE_LABEL] = SILENCE_INDEX
 
   def prepare_background_data(self):
@@ -209,7 +206,7 @@ class AudioProcessor(object):
             }).audio.flatten()
         self.background_data.append(wav_data)
       if not self.background_data:
-        raise Exception('No background wav files were found in ' + search_path)
+        raise Exception(f'No background wav files were found in {search_path}')
 
   def prepare_processing_graph(self, model_settings):
     """Builds a TensorFlow graph to apply the input distortions."""
@@ -296,10 +293,10 @@ class AudioProcessor(object):
           'spectrogram_frequencies']
     elif self.output_representation == 'mfcc':
       data_dim = model_settings['spectrogram_length'] * \
-                 model_settings['num_log_mel_features']
+                   model_settings['num_log_mel_features']
     elif self.output_representation == 'mfcc_and_raw':
       data_dim = model_settings['spectrogram_length'] * \
-                 model_settings['num_log_mel_features']
+                   model_settings['num_log_mel_features']
       raw_data = np.zeros((sample_count, model_settings['desired_samples']))
 
     data = np.zeros((sample_count, data_dim))
@@ -313,11 +310,9 @@ class AudioProcessor(object):
       # Pick which audio sample to use.
       if how_many == -1 or pick_deterministically:
         sample_index = i
-        sample = candidates[sample_index]
       else:
         sample_index = np.random.randint(len(candidates))
-        sample = candidates[sample_index]
-
+      sample = candidates[sample_index]
       # If we're time shifting, set up the offset for this sample.
       if np.random.uniform(0.0, 1.0) < time_shift_frequency:
         time_shift = np.random.randint(time_shift_range[0],
@@ -344,7 +339,7 @@ class AudioProcessor(object):
           background_volume = 0.0
           # silence class with all zeros is boring!
           if sample['label'] == SILENCE_LABEL and \
-                  np.random.uniform(0, 1) < 0.9:
+                    np.random.uniform(0, 1) < 0.9:
             background_volume = np.random.uniform(0, silence_volume_range)
       else:
         background_reshaped = np.zeros([desired_samples, 1])
@@ -392,10 +387,7 @@ class AudioProcessor(object):
   def get_unprocessed_data(self, how_many, model_settings, mode):
     """Gets sample data without transformations."""
     candidates = self.data_index[mode]
-    if how_many == -1:
-      sample_count = len(candidates)
-    else:
-      sample_count = how_many
+    sample_count = len(candidates) if how_many == -1 else how_many
     desired_samples = model_settings['desired_samples']
     words_list = self.words_list
     data = np.zeros((sample_count, desired_samples))
@@ -410,16 +402,14 @@ class AudioProcessor(object):
       scaled_foreground = tf.multiply(wav_decoder.audio,
                                       foreground_volume_placeholder)
       for i in range(sample_count):
-        if how_many == -1:
-          sample_index = i
-        else:
-          sample_index = np.random.randint(len(candidates))
+        sample_index = i if how_many == -1 else np.random.randint(len(candidates))
         sample = candidates[sample_index]
-        input_dict = {wav_filename_placeholder: sample['file']}
-        if sample['label'] == SILENCE_LABEL:
-          input_dict[foreground_volume_placeholder] = 0
-        else:
-          input_dict[foreground_volume_placeholder] = 1
+        input_dict = {
+            wav_filename_placeholder:
+            sample['file'],
+            foreground_volume_placeholder:
+            0 if sample['label'] == SILENCE_LABEL else 1,
+        }
         data[i, :] = sess.run(scaled_foreground, feed_dict=input_dict).flatten()
         label_index = self.word_to_index[sample['label']]
         labels.append(words_list[label_index])

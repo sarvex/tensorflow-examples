@@ -140,8 +140,7 @@ def build_inputs(
     images.append(image)
     scales.append(scale)
   if not images:
-    raise ValueError(
-        'Cannot find any images for pattern {}'.format(image_path_pattern))
+    raise ValueError(f'Cannot find any images for pattern {image_path_pattern}')
   return raw_images, tf.stack(images), tf.stack(scales)
 
 
@@ -224,7 +223,7 @@ def restore_ckpt(sess, ckpt_path, ema_decay=0.9998, export_ckpt=None):
   saver.restore(sess, ckpt_path)
 
   if export_ckpt:
-    print('export model to {}'.format(export_ckpt))
+    print(f'export model to {export_ckpt}')
     if ema_assign_op is not None:
       sess.run(ema_assign_op)
     saver = tf.train.Saver(max_to_keep=1, save_relative_paths=True)
@@ -493,10 +492,10 @@ class ServingDriver(object):
     """
     if not self.sess:
       self.build()
-    predictions = self.sess.run(
+    return self.sess.run(
         self.signitures['prediction'],
-        feed_dict={self.signitures['image_files']: image_files})
-    return predictions
+        feed_dict={self.signitures['image_files']: image_files},
+    )
 
   def benchmark(self, image_arrays, trace_filename=None):
     """Benchmark inference latency/throughput.
@@ -549,10 +548,10 @@ class ServingDriver(object):
     """
     if not self.sess:
       self.build()
-    predictions = self.sess.run(
+    return self.sess.run(
         self.signitures['prediction'],
-        feed_dict={self.signitures['image_arrays']: image_arrays})
-    return predictions
+        feed_dict={self.signitures['image_arrays']: image_arrays},
+    )
 
   def load(self, saved_model_dir_or_frozen_graph: Text):
     """Load the model using saved model or a frozen graph."""
@@ -578,9 +577,9 @@ class ServingDriver(object):
   def freeze(self):
     """Freeze the graph."""
     output_names = [self.signitures['prediction'].op.name]
-    graphdef = tf.graph_util.convert_variables_to_constants(
-        self.sess, self.sess.graph_def, output_names)
-    return graphdef
+    return tf.graph_util.convert_variables_to_constants(self.sess,
+                                                        self.sess.graph_def,
+                                                        output_names)
 
   def export(self,
              output_dir: Text,
@@ -612,7 +611,7 @@ class ServingDriver(object):
 
     # also save freeze pb file.
     graphdef = self.freeze()
-    pb_path = os.path.join(output_dir, self.model_name + '_frozen.pb')
+    pb_path = os.path.join(output_dir, f'{self.model_name}_frozen.pb')
     tf.io.gfile.GFile(pb_path, 'wb').write(graphdef.SerializeToString())
     logging.info('Frozen graph saved at %s', pb_path)
 
@@ -634,7 +633,7 @@ class ServingDriver(object):
     if tensorrt:
       from tensorflow.python.compiler.tensorrt import trt  # pylint: disable=g-direct-tensorflow-import,g-import-not-at-top
       sess_config = tf.ConfigProto(gpu_options=tf.GPUOptions(allow_growth=True))
-      trt_path = os.path.join(output_dir, 'tensorrt_' + tensorrt.lower())
+      trt_path = os.path.join(output_dir, f'tensorrt_{tensorrt.lower()}')
       trt.create_inference_graph(
           None,
           None,
@@ -715,8 +714,8 @@ class InferenceDriver(object):
             prediction,
             label_map=self.label_map,
             **kwargs)
-        output_image_path = os.path.join(output_dir, str(i) + '.jpg')
+        output_image_path = os.path.join(output_dir, f'{str(i)}.jpg')
         Image.fromarray(img).save(output_image_path)
-        print('writing file to %s' % output_image_path)
+        print(f'writing file to {output_image_path}')
 
       return predictions

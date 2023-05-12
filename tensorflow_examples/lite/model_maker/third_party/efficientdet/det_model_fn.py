@@ -127,7 +127,7 @@ def learning_rate_schedule(params, global_step):
   if lr_decay_method == 'constant':
     return params['adjusted_learning_rate']
 
-  raise ValueError('unknown lr_decay_method: {}'.format(lr_decay_method))
+  raise ValueError(f'unknown lr_decay_method: {lr_decay_method}')
 
 
 def focal_loss(y_pred, y_true, alpha, gamma, normalizer, label_smoothing=0.0):
@@ -566,43 +566,42 @@ def _model_fn(features, labels, mode, params, model, variable_filter_fn=None):
         host_call=utils.get_tpu_host_call(global_step, params),
         scaffold_fn=scaffold_fn,
         training_hooks=training_hooks)
-  else:
-    # Profile every 1K steps.
-    if params.get('profile', False):
-      profile_hook = tf.estimator.ProfilerHook(
-          save_steps=1000, output_dir=params['model_dir'], show_memory=True)
-      training_hooks.append(profile_hook)
+  # Profile every 1K steps.
+  if params.get('profile', False):
+    profile_hook = tf.estimator.ProfilerHook(
+        save_steps=1000, output_dir=params['model_dir'], show_memory=True)
+    training_hooks.append(profile_hook)
 
-      # Report memory allocation if OOM; it will slow down the running.
-      class OomReportingHook(tf.estimator.SessionRunHook):
+    # Report memory allocation if OOM; it will slow down the running.
+    class OomReportingHook(tf.estimator.SessionRunHook):
 
-        def before_run(self, run_context):
-          return tf.estimator.SessionRunArgs(
-              fetches=[],
-              options=tf.RunOptions(report_tensor_allocations_upon_oom=True))
+      def before_run(self, run_context):
+        return tf.estimator.SessionRunArgs(
+            fetches=[],
+            options=tf.RunOptions(report_tensor_allocations_upon_oom=True))
 
-      training_hooks.append(OomReportingHook())
+    training_hooks.append(OomReportingHook())
 
-    logging_hook = tf.estimator.LoggingTensorHook(
-        {
-            'step': global_step,
-            'det_loss': det_loss,
-            'cls_loss': cls_loss,
-            'box_loss': box_loss,
-        },
-        every_n_iter=params.get('iterations_per_loop', 100),
-    )
-    training_hooks.append(logging_hook)
+  logging_hook = tf.estimator.LoggingTensorHook(
+      {
+          'step': global_step,
+          'det_loss': det_loss,
+          'cls_loss': cls_loss,
+          'box_loss': box_loss,
+      },
+      every_n_iter=params.get('iterations_per_loop', 100),
+  )
+  training_hooks.append(logging_hook)
 
-    eval_metric_ops = (
-        eval_metrics[0](**eval_metrics[1]) if eval_metrics else None)
-    return tf.estimator.EstimatorSpec(
-        mode=mode,
-        loss=total_loss,
-        train_op=train_op,
-        eval_metric_ops=eval_metric_ops,
-        scaffold=scaffold_fn() if scaffold_fn else None,
-        training_hooks=training_hooks)
+  eval_metric_ops = (
+      eval_metrics[0](**eval_metrics[1]) if eval_metrics else None)
+  return tf.estimator.EstimatorSpec(
+      mode=mode,
+      loss=total_loss,
+      train_op=train_op,
+      eval_metric_ops=eval_metric_ops,
+      scaffold=scaffold_fn() if scaffold_fn else None,
+      training_hooks=training_hooks)
 
 
 def efficientdet_model_fn(features, labels, mode, params):
@@ -623,7 +622,7 @@ def get_model_arch(model_name='efficientdet-d0'):
   if 'efficientdet' in model_name:
     return efficientdet_arch.efficientdet
 
-  raise ValueError('Invalide model name {}'.format(model_name))
+  raise ValueError(f'Invalide model name {model_name}')
 
 
 def get_model_fn(model_name='efficientdet-d0'):
@@ -631,4 +630,4 @@ def get_model_fn(model_name='efficientdet-d0'):
   if 'efficientdet' in model_name:
     return efficientdet_model_fn
 
-  raise ValueError('Invalide model name {}'.format(model_name))
+  raise ValueError(f'Invalide model name {model_name}')

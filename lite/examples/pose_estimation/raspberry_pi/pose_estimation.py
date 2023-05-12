@@ -49,7 +49,7 @@ def run(estimation_model: str, tracker_type: str, classification_model: str,
         'MoveNet MultiPose model.')
 
   # Initialize the pose estimator selected.
-  if estimation_model in ['movenet_lightning', 'movenet_thunder']:
+  if estimation_model in {'movenet_lightning', 'movenet_thunder'}:
     pose_detector = Movenet(estimation_model)
   elif estimation_model == 'posenet':
     pose_detector = Posenet(estimation_model)
@@ -73,12 +73,12 @@ def run(estimation_model: str, tracker_type: str, classification_model: str,
   text_color = (0, 0, 255)  # red
   font_size = 1
   font_thickness = 1
-  max_detection_results = 3
   fps_avg_frame_count = 10
 
   # Initialize the classification model
   if classification_model:
     classifier = Classifier(classification_model, label_file)
+    max_detection_results = 3
     detection_results_to_show = min(max_detection_results,
                                     len(classifier.pose_class_names))
 
@@ -112,7 +112,7 @@ def run(estimation_model: str, tracker_type: str, classification_model: str,
       for i in range(detection_results_to_show):
         class_name = prob_list[i].label
         probability = round(prob_list[i].score, 2)
-        result_text = class_name + ' (' + str(probability) + ')'
+        result_text = f'{class_name} ({str(probability)})'
         text_location = (left_margin, (i + 2) * row_size)
         cv2.putText(image, result_text, text_location, cv2.FONT_HERSHEY_PLAIN,
                     font_size, text_color, font_thickness)
@@ -124,7 +124,7 @@ def run(estimation_model: str, tracker_type: str, classification_model: str,
       start_time = time.time()
 
     # Show the FPS
-    fps_text = 'FPS = ' + str(int(fps))
+    fps_text = f'FPS = {int(fps)}'
     text_location = (left_margin, row_size)
     cv2.putText(image, fps_text, text_location, cv2.FONT_HERSHEY_PLAIN,
                 font_size, text_color, font_thickness)

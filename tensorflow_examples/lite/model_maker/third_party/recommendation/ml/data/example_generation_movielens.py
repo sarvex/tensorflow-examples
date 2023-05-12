@@ -122,9 +122,7 @@ def download_and_extract_data(data_directory,
       hash_algorithm="sha256",
       extract=True,
       cache_dir=data_directory)
-  extracted_file_dir = os.path.join(
-      os.path.dirname(path_to_zip), extracted_dir_name)
-  return extracted_file_dir
+  return os.path.join(os.path.dirname(path_to_zip), extracted_dir_name)
 
 
 def read_data(data_directory, min_rating=None):
@@ -171,10 +169,7 @@ def generate_movies_dict(movies_df):
 
 
 def extract_year_from_title(title):
-  year = re.search(r"\((\d{4})\)", title)
-  if year:
-    return int(year.group(1))
-  return 0
+  return int(year[1]) if (year := re.search(r"\((\d{4})\)", title)) else 0
 
 
 def generate_feature_of_movie_years(movies_dict, movies):
@@ -437,21 +432,21 @@ def generate_datasets(extracted_data_dir,
             movies_df=movies_df, movie_counts=movie_counts))
     vocab_file = os.path.join(output_dir, vocab_filename)
     write_vocab_json(movie_vocab, filename=vocab_file)
-    stats.update({
+    stats |= {
         "vocab_size": len(movie_vocab),
         "vocab_file": vocab_file,
-        "vocab_max_id": max([arr[VOCAB_MOVIE_ID_INDEX] for arr in movie_vocab])
-    })
+        "vocab_max_id": max(arr[VOCAB_MOVIE_ID_INDEX] for arr in movie_vocab),
+    }
 
     for vocab, filename, key in zip([movie_year_vocab, movie_genre_vocab],
                                     [vocab_year_filename, vocab_genre_filename],
                                     ["year_vocab", "genre_vocab"]):
       vocab_file = os.path.join(output_dir, filename)
       write_vocab_txt(vocab, filename=vocab_file)
-      stats.update({
+      stats |= {
           key + "_size": len(vocab),
           key + "_file": vocab_file,
-      })
+      }
 
   return stats
 

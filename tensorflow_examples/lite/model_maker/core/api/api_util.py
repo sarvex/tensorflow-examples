@@ -85,7 +85,7 @@ class Symbol:
   def from_callable(cls, exported_name: str, func: Callable) -> 'Symbol':
     """Creates a symbol from a callable (function or class)."""
     if func is None:
-      raise ValueError('func should not be None: {}'.format(func))
+      raise ValueError(f'func should not be None: {func}')
     imported_module, imported_name = _get_module_and_name(func)
 
     exported_parts = split_name(exported_name)
@@ -115,14 +115,10 @@ class Symbol:
   def gen_import(self) -> str:
     """Generates import text line."""
     as_name = self.exported_parts[-1]
-    if as_name == self.imported_name:
-      import_line = 'from {} import {}'.format(self.imported_module,
-                                               self.imported_name)
-    else:
-      import_line = 'from {} import {} as {}'.format(self.imported_module,
-                                                     self.imported_name,
-                                                     as_name)
-    return import_line
+    return (
+        f'from {self.imported_module} import {self.imported_name}'
+        if as_name == self.imported_name else
+        f'from {self.imported_module} import {self.imported_name} as {as_name}')
 
   def gen_parents_import(self) -> Dict[str, Sequence[str]]:
     """Generates parents import."""
@@ -134,7 +130,7 @@ class Symbol:
       parent = as_package(parts)
       abs_package = split_name(PACKAGE_PLACEHOLDER) + parts
       abs_package = as_package(abs_package)
-      import_line = 'from {} import {}'.format(abs_package, import_name)
+      import_line = f'from {abs_package} import {import_name}'
       parents_import[parent] = [import_line]
     return parents_import
 
@@ -159,16 +155,13 @@ def as_package(names: List[str]) -> str:
 
 def as_path(names: List[str]) -> str:
   """Joins names as a file path."""
-  if names:
-    return os.path.join(*names)
-  else:
-    return ''
+  return os.path.join(*names) if names else ''
 
 
 def _get_module_and_name(func: Callable) -> Tuple[str, str]:
   """Gets module and name, or raise error if not a function."""
   if not inspect.isfunction(func) and not inspect.isclass(func):
-    raise ValueError('Expect a function or class, but got: {}'.format(func))
+    raise ValueError(f'Expect a function or class, but got: {func}')
   return func.__module__, func.__name__
 
 
@@ -177,7 +170,7 @@ class mm_export:  # pylint: disable=invalid-name
 
   def __init__(self, name: str):
     if name in NAME_TO_SYMBOL:
-      raise ValueError('API already exists: `{}`.'.format(name))
+      raise ValueError(f'API already exists: `{name}`.')
     self._exported_name = name  # API name.
 
   def __call__(self, func: Callable) -> Callable:
@@ -226,7 +219,7 @@ def generate_imports() -> Dict[str, Sequence[str]]:
 
 def generate_package_doc(package_name):
   """Generates package doc."""
-  return '"""Generated API for package: {}."""'.format(package_name)
+  return f'"""Generated API for package: {package_name}."""'
 
 
 def write_packages(
@@ -275,7 +268,7 @@ def write_packages(
 
     # Add package doc.
     if package_name in doc_dict:
-      doc = '"""{}"""'.format(doc_dict[package_name])
+      doc = f'"""{doc_dict[package_name]}"""'
     else:
       doc = generate_package_doc(full_package_name)
 
@@ -305,7 +298,7 @@ def write_python_file(filepath: PathOrStrType, package_doc: Optional[str],
 
 def _version_line(version: str):
   """Gets a version statement."""
-  return "__version__ = '{}'".format(version)
+  return f"__version__ = '{version}'"
 
 
 def overwrite_version_in_package(base_dir: PathOrStrType, version: str):

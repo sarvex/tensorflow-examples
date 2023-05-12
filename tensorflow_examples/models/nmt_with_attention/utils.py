@@ -51,9 +51,7 @@ def download(download_path):
   path_to_zip = tf.keras.utils.get_file(
       'spa-eng.zip', origin=_URL, cache_subdir=download_path,
       extract=True)
-  path_to_file = os.path.join(os.path.dirname(path_to_zip), 'spa-eng/spa.txt')
-
-  return path_to_file
+  return os.path.join(os.path.dirname(path_to_zip), 'spa-eng/spa.txt')
 
 
 def unicode_to_ascii(s):
@@ -84,7 +82,7 @@ def preprocess_sentence(w):
 
   # adding a start and an end token to the sentence
   # so that the model know when to start and stop predicting.
-  w = '<start> ' + w + ' <end>'
+  w = f'<start> {w} <end>'
   return w
 
 
@@ -180,7 +178,7 @@ def flags_dict():
     Command line arguments as Flags.
   """
 
-  kwargs = {
+  return {
       'epochs': FLAGS.epochs,
       'enable_function': FLAGS.enable_function,
       'buffer_size': FLAGS.buffer_size,
@@ -189,7 +187,5 @@ def flags_dict():
       'num_examples': FLAGS.num_examples,
       'embedding_dim': FLAGS.embedding_dim,
       'enc_units': FLAGS.enc_units,
-      'dec_units': FLAGS.dec_units
+      'dec_units': FLAGS.dec_units,
   }
-
-  return kwargs

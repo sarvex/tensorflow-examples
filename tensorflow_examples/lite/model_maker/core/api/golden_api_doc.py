@@ -13,10 +13,10 @@
 # limitations under the License.
 """Golden APIs doc."""
 
-DOCS = {}
 
-# pylint: disable=line-too-long
-DOCS[''] = """
+DOCS = {
+    '': (
+        """
 Public APIs for TFLite Model Maker, a transfer learning library to train custom TFLite models.
 
 You can install the package with
@@ -45,42 +45,38 @@ model.export(export_dir='/tmp/')
 For more details, please refer to our guide:
 https://www.tensorflow.org/lite/guide/model_maker.
 """.lstrip()
-
-DOCS['audio_classifier'] = """APIs to train an audio classification model.
+    ),
+    'audio_classifier': """APIs to train an audio classification model.
 
 Tutorial:
 https://colab.research.google.com/github/googlecodelabs/odml-pathways/blob/main/audio_classification/colab/model_maker_audio_colab.ipynb
 
 Demo code:
 https://github.com/tensorflow/examples/blob/master/tensorflow_examples/lite/model_maker/demo/audio_classification_demo.py
-"""
-
-DOCS['config'] = 'APIs for the config of TFLite Model Maker.'
-
-DOCS['image_classifier'] = """APIs to train an image classification model.
+""",
+    'config': 'APIs for the config of TFLite Model Maker.',
+    'image_classifier': """APIs to train an image classification model.
 
 Task guide:
 https://www.tensorflow.org/lite/tutorials/model_maker_image_classification.
-"""
-
-DOCS['model_spec'] = 'APIs for the model spec of TFLite Model Maker.'
-
-DOCS['object_detector'] = 'APIs to train an object detection model.'
-
-DOCS['question_answer'] = """
+""",
+    'model_spec': 'APIs for the model spec of TFLite Model Maker.',
+    'object_detector': 'APIs to train an object detection model.',
+    'question_answer': (
+        """
 APIs to train a model that can answer questions based on a predefined text.
 
 Task guide:
 https://www.tensorflow.org/lite/tutorials/model_maker_question_answer.
 """.lstrip()
-
-DOCS['recommendation'] = """APIs to train an on-device recommendation model.
+    ),
+    'recommendation': """APIs to train an on-device recommendation model.
 
 Demo code:
 https://github.com/tensorflow/examples/blob/master/tensorflow_examples/lite/model_maker/demo/recommendation_demo.py
-"""
-
-DOCS['recommendation.spec'] = """
+""",
+    'recommendation.spec': (
+        """
 APIs for recommendation specifications.
 
 Example:
@@ -129,10 +125,11 @@ spec = model_spec.get(
     'recommendation', input_spec=input_spec, model_hparams=model_hparams)
 ```
 """.lstrip()
-
-DOCS['text_classifier'] = """APIs to train a text classification model.
+    ),
+    'text_classifier': """APIs to train a text classification model.
 
 Task guide:
 https://www.tensorflow.org/lite/tutorials/model_maker_text_classification.
-"""
+""",
+}
 # pylint: enable=line-too-long

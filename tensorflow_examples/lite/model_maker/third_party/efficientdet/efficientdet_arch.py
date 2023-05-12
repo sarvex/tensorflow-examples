@@ -183,14 +183,14 @@ def class_net(images,
       images = utils.drop_connect(images, is_training, survival_prob)
       images = images + orig_images
 
-  classes = conv_op(
+  return conv_op(
       images,
       num_classes * num_anchors,
       kernel_size=3,
       bias_initializer=tf.constant_initializer(-np.log((1 - 0.01) / 0.01)),
       padding='same',
-      name='class-predict')
-  return classes
+      name='class-predict',
+  )
 
 
 def box_net(images,
@@ -240,15 +240,14 @@ def box_net(images,
       images = utils.drop_connect(images, is_training, survival_prob)
       images = images + orig_images
 
-  boxes = conv_op(
+  return conv_op(
       images,
       4 * num_anchors,
       kernel_size=3,
       bias_initializer=tf.zeros_initializer(),
       padding='same',
-      name='box-predict')
-
-  return boxes
+      name='box-predict',
+  )
 
 
 def build_class_and_box_outputs(feats, config):
@@ -320,34 +319,32 @@ def build_backbone(features, config):
   """
   backbone_name = config.backbone_name
   is_training_bn = config.is_training_bn
-  if 'efficientnet' in backbone_name:
-    override_params = {
-        'batch_norm':
-            utils.batch_norm_class(is_training_bn, config.strategy),
-        'relu_fn':
-            functools.partial(utils.activation_fn, act_type=config.act_type),
-    }
-    if 'b0' in backbone_name:
-      override_params['survival_prob'] = 0.0
-    if config.backbone_config is not None:
-      override_params['blocks_args'] = (
-          efficientnet_builder.BlockDecoder().encode(
-              config.backbone_config.blocks))
-    override_params['data_format'] = config.data_format
-    model_builder = backbone_factory.get_model_builder(backbone_name)
-    _, endpoints = model_builder.build_model_base(
-        features,
-        backbone_name,
-        training=is_training_bn,
-        override_params=override_params)
-    u1 = endpoints[0]
-    u2 = endpoints[1]
-    u3 = endpoints[2]
-    u4 = endpoints[3]
-    u5 = endpoints[4]
-  else:
-    raise ValueError(
-        'backbone model {} is not supported.'.format(backbone_name))
+  if 'efficientnet' not in backbone_name:
+    raise ValueError(f'backbone model {backbone_name} is not supported.')
+  override_params = {
+      'batch_norm':
+          utils.batch_norm_class(is_training_bn, config.strategy),
+      'relu_fn':
+          functools.partial(utils.activation_fn, act_type=config.act_type),
+  }
+  if 'b0' in backbone_name:
+    override_params['survival_prob'] = 0.0
+  if config.backbone_config is not None:
+    override_params['blocks_args'] = (
+        efficientnet_builder.BlockDecoder().encode(
+            config.backbone_config.blocks))
+  override_params['data_format'] = config.data_format
+  model_builder = backbone_factory.get_model_builder(backbone_name)
+  _, endpoints = model_builder.build_model_base(
+      features,
+      backbone_name,
+      training=is_training_bn,
+      override_params=override_params)
+  u1 = endpoints[0]
+  u2 = endpoints[1]
+  u3 = endpoints[2]
+  u4 = endpoints[3]
+  u5 = endpoints[4]
   return {0: features, 1: u1, 2: u2, 3: u3, 4: u4, 5: u5}
 
 
@@ -364,8 +361,9 @@ def build_feature_network(features, config):
   feat_sizes = utils.get_feat_sizes(config.image_size, config.max_level)
   feats = []
   if config.min_level not in features.keys():
-    raise ValueError('features.keys ({}) should include min_level ({})'.format(
-        features.keys(), config.min_level))
+    raise ValueError(
+        f'features.keys ({features.keys()}) should include min_level ({config.min_level})'
+    )
 
   # Build additional input features that are not from backbone.
   for level in range(config.min_level, config.max_level + 1):
@@ -398,7 +396,7 @@ def build_feature_network(features, config):
 
   with tf.variable_scope('fpn_cells'):
     for rep in range(config.fpn_cell_repeats):
-      with tf.variable_scope('cell_{}'.format(rep)):
+      with tf.variable_scope(f'cell_{rep}'):
         logging.info('building cell %d', rep)
         new_feats = build_bifpn_layer(feats, feat_sizes, config)
 
@@ -472,8 +470,7 @@ def fuse_features(nodes, weight_method):
   elif weight_method == 'sum':
     new_node = tf.add_n(nodes)
   else:
-    raise ValueError(
-        'unknown weight_method {}'.format(weight_method))
+    raise ValueError(f'unknown weight_method {weight_method}')
 
   return new_node
 
@@ -489,7 +486,7 @@ def build_bifpn_layer(feats, feat_sizes, config):
 
   num_output_connections = [0 for _ in feats]
   for i, fnode in enumerate(fpn_config.nodes):
-    with tf.variable_scope('fnode{}'.format(i)):
+    with tf.variable_scope(f'fnode{i}'):
       logging.info('fnode %d : %s', i, fnode)
       new_node_height = feat_sizes[fnode['feat_level']]['height']
       new_node_width = feat_sizes[fnode['feat_level']]['width']
@@ -498,18 +495,23 @@ def build_bifpn_layer(feats, feat_sizes, config):
         input_node = feats[input_offset]
         num_output_connections[input_offset] += 1
         input_node = resample_feature_map(
-            input_node, '{}_{}_{}'.format(idx, input_offset, len(feats)),
-            new_node_height, new_node_width, p.fpn_num_filters,
-            p.apply_bn_for_resampling, p.is_training_bn,
+            input_node,
+            f'{idx}_{input_offset}_{len(feats)}',
+            new_node_height,
+            new_node_width,
+            p.fpn_num_filters,
+            p.apply_bn_for_resampling,
+            p.is_training_bn,
             p.conv_after_downsample,
             strategy=p.strategy,
             data_format=config.data_format,
-            batch_norm_trainable=p.batch_norm_trainable)
+            batch_norm_trainable=p.batch_norm_trainable,
+        )
         nodes.append(input_node)
 
       new_node = fuse_features(nodes, fpn_config.weight_method)
 
-      with tf.variable_scope('op_after_combine{}'.format(len(feats))):
+      with tf.variable_scope(f'op_after_combine{len(feats)}'):
         if not p.conv_bn_act_pattern:
           new_node = utils.activation_fn(new_node, p.act_type)
 

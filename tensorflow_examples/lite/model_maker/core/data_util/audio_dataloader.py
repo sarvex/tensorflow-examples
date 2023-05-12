@@ -125,8 +125,7 @@ class ExamplesHelper(object):
     examples, labels = self.examples_and_label_indices()
     wav_ds = tf.data.Dataset.from_tensor_slices(list(examples))
     label_ds = tf.data.Dataset.from_tensor_slices(list(labels))
-    ds = tf.data.Dataset.zip((wav_ds, label_ds))
-    return ds
+    return tf.data.Dataset.zip((wav_ds, label_ds))
 
 
 @mm_export('audio_classifier.DataLoader')
@@ -368,17 +367,16 @@ class DataLoader(dataloader.ClassificationDataLoader):
     ds = ds.map(_one_hot_encoding_label, num_parallel_calls=autotune)
 
     # Shuffle needs to be done after caching to create randomness across epochs.
-    if is_training:
-      if shuffle:
-        # Shuffle size should be bigger than the batch_size. Otherwise it's only
-        # shuffling within the batch, which equals to not having shuffle.
-        buffer_size = 3 * batch_size
-        # But since we are doing shuffle before repeat, it doesn't make sense to
-        # shuffle more than total available entries.
-        # TODO(wangtz): Do we want to do shuffle before / after repeat?
-        # Shuffle after repeat will give a more randomized dataset and mix the
-        # epoch boundary: https://www.tensorflow.org/guide/data
-        ds = ds.shuffle(buffer_size=min(self._size, buffer_size))
+    if is_training and shuffle:
+      # Shuffle size should be bigger than the batch_size. Otherwise it's only
+      # shuffling within the batch, which equals to not having shuffle.
+      buffer_size = 3 * batch_size
+      # But since we are doing shuffle before repeat, it doesn't make sense to
+      # shuffle more than total available entries.
+      # TODO(wangtz): Do we want to do shuffle before / after repeat?
+      # Shuffle after repeat will give a more randomized dataset and mix the
+      # epoch boundary: https://www.tensorflow.org/guide/data
+      ds = ds.shuffle(buffer_size=min(self._size, buffer_size))
 
     ds = ds.batch(batch_size, drop_remainder=drop_remainder)
     ds = ds.prefetch(tf.data.experimental.AUTOTUNE)

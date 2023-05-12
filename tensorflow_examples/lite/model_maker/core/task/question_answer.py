@@ -34,18 +34,21 @@ from tensorflow_examples.lite.model_maker.core.task.metadata_writers.bert.questi
 def _get_model_info(model_spec, vocab_file):
   """Gets the specific info for the question answer model."""
   return metadata_writer.QuestionAnswererInfo(
-      name=model_spec.name + ' Question and Answerer',
+      name=f'{model_spec.name} Question and Answerer',
       version='v1',
       description=metadata_writer.DEFAULT_DESCRIPTION,
       input_names=metadata_writer.bert_qa_inputs(
           ids_name=model_spec.tflite_input_name['ids'],
           mask_name=model_spec.tflite_input_name['mask'],
-          segment_ids_name=model_spec.tflite_input_name['segment_ids']),
+          segment_ids_name=model_spec.tflite_input_name['segment_ids'],
+      ),
       output_names=metadata_writer.bert_qa_outputs(
           start_logits_name=model_spec.tflite_output_name['start_logits'],
-          end_logits_name=model_spec.tflite_output_name['end_logits']),
+          end_logits_name=model_spec.tflite_output_name['end_logits'],
+      ),
       tokenizer_type=metadata_writer.Tokenizer.BERT_TOKENIZER,
-      vocab_file=vocab_file)
+      vocab_file=vocab_file,
+  )
 
 
 @mm_export('question_answer.QuestionAnswer')
@@ -218,8 +221,9 @@ class QuestionAnswer(custom_model.CustomModel):
     """
     model_spec = ms.get(model_spec)
     if compat.get_tf_behavior() not in model_spec.compat_tf_versions:
-      raise ValueError('Incompatible versions. Expect {}, but got {}.'.format(
-          model_spec.compat_tf_versions, compat.get_tf_behavior()))
+      raise ValueError(
+          f'Incompatible versions. Expect {model_spec.compat_tf_versions}, but got {compat.get_tf_behavior()}.'
+      )
 
     model = cls(model_spec, shuffle=shuffle)
 

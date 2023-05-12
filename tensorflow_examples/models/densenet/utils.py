@@ -146,7 +146,7 @@ def flags_dict():
     Command line arguments as Flags.
   """
 
-  kwargs = {
+  return {
       'epochs': FLAGS.epochs,
       'enable_function': FLAGS.enable_function,
       'buffer_size': FLAGS.buffer_size,
@@ -164,9 +164,8 @@ def flags_dict():
       'dropout_rate': FLAGS.dropout_rate,
       'pool_initial': FLAGS.pool_initial,
       'include_top': FLAGS.include_top,
-      'train_mode': FLAGS.train_mode
+      'train_mode': FLAGS.train_mode,
   }
-  return kwargs
 
 
 def get_cifar10_kwargs():

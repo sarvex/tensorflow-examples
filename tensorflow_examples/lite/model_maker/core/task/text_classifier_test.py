@@ -218,7 +218,7 @@ class TextClassifierTest(tf.test.TestCase):
           low=0, high=2, size=(1, spec.seq_len), dtype=np.int32)
       random_inputs = (input_word_ids, input_mask, input_type_ids)
     else:
-      raise ValueError('Unsupported model_spec type: %s' % str(type(spec)))
+      raise ValueError(f'Unsupported model_spec type: {str(type(spec))}')
 
     self.assertTrue(
         test_util.is_same_output(

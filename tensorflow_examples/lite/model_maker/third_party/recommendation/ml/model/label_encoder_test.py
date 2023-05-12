@@ -41,10 +41,8 @@ class LabelEncoderTest(tf.test.TestCase):
         vocab_size=3952,
         embedding_dim=4)
 
-    input_config = input_config_pb2.InputConfig(
-        activity_feature_groups=[feature_group_1],
-        label_feature=feature_label)
-    return input_config
+    return input_config_pb2.InputConfig(
+        activity_feature_groups=[feature_group_1], label_feature=feature_label)
 
   def test_label_encoder(self):
     input_config = self._create_test_input_config()

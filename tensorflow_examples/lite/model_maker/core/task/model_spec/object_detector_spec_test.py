@@ -96,17 +96,15 @@ class EfficientDetModelSpecTest(tf.test.TestCase):
     labels = {
         'box_targets_%d' % level: tf.ones((1, size, size, 36))
         for level, size in sizes
-    }
-    labels.update({
+    } | {
         'cls_targets_%d' % level: tf.ones((1, size, size, 9), dtype=tf.int32)
         for level, size in sizes
-    })
-    labels.update({'groundtruth_data': tf.zeros([1, 100, 7])})
-    labels.update({'image_scales': tf.constant([0.8])})
-    labels.update({'source_ids': tf.constant([1.0])})
-    labels.update({'mean_num_positives': tf.constant([10.0])})
-    ds = tf.data.Dataset.from_tensors((images, labels))
-    return ds
+    }
+    labels['groundtruth_data'] = tf.zeros([1, 100, 7])
+    labels['image_scales'] = tf.constant([0.8])
+    labels['source_ids'] = tf.constant([1.0])
+    labels['mean_num_positives'] = tf.constant([10.0])
+    return tf.data.Dataset.from_tensors((images, labels))
 
 
 if __name__ == '__main__':

@@ -30,10 +30,10 @@ from tensorflow_examples.lite.model_maker.core.task import model_util
 def _get_params(f, **kwargs):
   """Gets parameters of the function `f` from `**kwargs`."""
   parameters = inspect.signature(f).parameters
-  f_kwargs = {}  # kwargs for the function `f`
-  for param_name in parameters.keys():
-    if param_name in kwargs:
-      f_kwargs[param_name] = kwargs.pop(param_name)
+  f_kwargs = {
+      param_name: kwargs.pop(param_name)
+      for param_name in parameters.keys() if param_name in kwargs
+  }
   return f_kwargs, kwargs
 
 
@@ -71,11 +71,8 @@ class CustomModel(abc.ABC):
 
   def _get_default_export_format(self, **kwargs):
     """Gets the default export format."""
-    if kwargs.get('with_metadata', True):
-      export_format = (ExportFormat.TFLITE)
-    else:
-      export_format = self.DEFAULT_EXPORT_FORMAT
-    return export_format
+    return (ExportFormat.TFLITE
+            if kwargs.get('with_metadata', True) else self.DEFAULT_EXPORT_FORMAT)
 
   def _get_export_format(self, export_format, **kwargs):
     """Get export format."""
@@ -88,7 +85,7 @@ class CustomModel(abc.ABC):
     # Checks whether each export format is allowed.
     for e_format in export_format:
       if e_format not in self.ALLOWED_EXPORT_FORMAT:
-        raise ValueError('Export format %s is not allowed.' % e_format)
+        raise ValueError(f'Export format {e_format} is not allowed.')
 
     return export_format
 
@@ -131,7 +128,7 @@ class CustomModel(abc.ABC):
       export_tflite_kwargs, kwargs = _get_params(self._export_tflite, **kwargs)
       self._export_tflite(tflite_filepath, **export_tflite_kwargs)
       tf.compat.v1.logging.info(
-          'TensorFlow Lite model exported successfully: %s' % tflite_filepath)
+          f'TensorFlow Lite model exported successfully: {tflite_filepath}')
     else:
       tflite_filepath = None
       with_metadata = False

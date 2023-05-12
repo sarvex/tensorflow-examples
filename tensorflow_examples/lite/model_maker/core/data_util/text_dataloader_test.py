@@ -39,11 +39,10 @@ class MockClassifierModelSpec(object):
 
   def get_name_to_features(self):
     """Gets the dictionary describing the features."""
-    name_to_features = {
+    return {
         'input_ids': tf.io.FixedLenFeature([self.seq_len], tf.int64),
         'label_ids': tf.io.FixedLenFeature([], tf.int64),
     }
-    return name_to_features
 
   def select_data_from_record(self, record):
     """Dispatches records to features and labels."""
@@ -55,7 +54,7 @@ class MockClassifierModelSpec(object):
     """Converts examples to features and write them into TFRecord file."""
     writer = tf.io.TFRecordWriter(tfrecord_file)
 
-    label_to_id = dict((name, i) for i, name in enumerate(label_names))
+    label_to_id = {name: i for i, name in enumerate(label_names)}
     for example in examples:
       features = collections.OrderedDict()
 
@@ -64,8 +63,8 @@ class MockClassifierModelSpec(object):
 
       features['input_ids'] = tf.train.Feature(
           int64_list=tf.train.Int64List(value=list(input_ids)))
-      features['label_ids'] = tf.train.Feature(
-          int64_list=tf.train.Int64List(value=list([label_id])))
+      features['label_ids'] = tf.train.Feature(int64_list=tf.train.Int64List(
+          value=[label_id]))
       tf_example = tf.train.Example(
           features=tf.train.Features(feature=features))
       writer.write(tf_example.SerializeToString())
@@ -286,7 +285,7 @@ class TextClassifierDataLoaderTest(tf.test.TestCase):
     self.assertEqual(data.num_classes, 2)
     self.assertEqual(data.index_to_label, ['neg', 'pos'])
     for input_ids, label in data.gen_dataset():
-      self.assertTrue(label.numpy() == 1 or label.numpy() == 0)
+      self.assertTrue(label.numpy() in [1, 0])
       actual_input_ids = [label.numpy()] * model_spec.seq_len
       self.assertTrue((input_ids.numpy() == actual_input_ids).all())
 

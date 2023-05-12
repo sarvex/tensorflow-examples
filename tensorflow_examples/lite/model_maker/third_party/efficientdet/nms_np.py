@@ -175,12 +175,12 @@ def soft_nms(dets, nms_configs):
     inter = w * h
     iou = inter / (dets[0, 5] + dets[1:, 5] - inter)
 
-    if method == 'linear':
+    if method == 'gaussian':
+      weight = np.exp(-(iou * iou) / sigma)
+    elif method == 'linear':
       weight = np.ones_like(iou)
       weight[iou > iou_thresh] -= iou[iou > iou_thresh]
-    elif method == 'gaussian':
-      weight = np.exp(-(iou * iou) / sigma)
-    else:  # traditional nms
+    else:
       weight = np.ones_like(iou)
       weight[iou > iou_thresh] = 0
 
@@ -214,7 +214,7 @@ def nms(dets, nms_configs):
   if method in ('linear', 'gaussian'):
     return soft_nms(dets, nms_configs)
 
-  raise ValueError('Unknown NMS method: {}'.format(method))
+  raise ValueError(f'Unknown NMS method: {method}')
 
 
 def per_class_nms(boxes, scores, classes, image_id, image_scale, num_classes,
@@ -250,8 +250,8 @@ def per_class_nms(boxes, scores, classes, image_id, image_scale, num_classes,
     detections = np.vstack(detections)
     # take final 100 detections
     indices = np.argsort(-detections[:, -2])
-    detections = np.array(
-        detections[indices[0:max_boxes_to_draw]], dtype=np.float32)
+    detections = np.array(detections[indices[:max_boxes_to_draw]],
+                          dtype=np.float32)
     # Add dummy detections to fill up to 100 detections
     n = max(max_boxes_to_draw - len(detections), 0)
     detections_dummy = _generate_dummy_detections(n)

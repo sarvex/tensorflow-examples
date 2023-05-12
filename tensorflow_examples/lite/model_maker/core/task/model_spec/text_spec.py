@@ -102,11 +102,10 @@ class AverageWordVecModelSpec(object):
 
   def get_name_to_features(self):
     """Gets the dictionary describing the features."""
-    name_to_features = {
+    return {
         'input_ids': tf.io.FixedLenFeature([self.seq_len], tf.int64),
         'label_ids': tf.io.FixedLenFeature([], tf.int64),
     }
-    return name_to_features
 
   def select_data_from_record(self, record):
     """Dispatches records to features and labels."""
@@ -118,7 +117,7 @@ class AverageWordVecModelSpec(object):
     """Converts examples to features and write them into TFRecord file."""
     writer = tf.io.TFRecordWriter(tfrecord_file)
 
-    label_to_id = dict((name, i) for i, name in enumerate(label_names))
+    label_to_id = {name: i for i, name in enumerate(label_names)}
     for example in examples:
       features = collections.OrderedDict()
 
@@ -206,7 +205,7 @@ class AverageWordVecModelSpec(object):
     if len(token_ids) < self.seq_len:
       # Padding.
       pad_length = self.seq_len - len(token_ids)
-      token_ids = token_ids + pad_length * [pad_id]
+      token_ids += pad_length * [pad_id]
     else:
       token_ids = token_ids[:self.seq_len]
 
@@ -372,8 +371,9 @@ class BertModelSpec(object):
       default_batch_size: Default batch size for training.
     """
     if compat.get_tf_behavior() not in self.compat_tf_versions:
-      raise ValueError('Incompatible versions. Expect {}, but got {}.'.format(
-          self.compat_tf_versions, compat.get_tf_behavior()))
+      raise ValueError(
+          f'Incompatible versions. Expect {self.compat_tf_versions}, but got {compat.get_tf_behavior()}.'
+      )
     self.seq_len = seq_len
     self.dropout_rate = dropout_rate
     self.initializer_range = initializer_range
@@ -452,14 +452,13 @@ class BertClassifierModelSpec(BertModelSpec):
 
   def get_name_to_features(self):
     """Gets the dictionary describing the features."""
-    name_to_features = {
+    return {
         'input_ids': tf.io.FixedLenFeature([self.seq_len], tf.int64),
         'input_mask': tf.io.FixedLenFeature([self.seq_len], tf.int64),
         'segment_ids': tf.io.FixedLenFeature([self.seq_len], tf.int64),
         'label_ids': tf.io.FixedLenFeature([], tf.int64),
         'is_real_example': tf.io.FixedLenFeature([], tf.int64),
     }
-    return name_to_features
 
   def select_data_from_record(self, record):
     """Dispatches records to features and labels."""
@@ -819,14 +818,13 @@ class BertQAModelSpec(BertModelSpec):
     if self.init_from_squad_model:
       return create_qa_model_from_squad(self.seq_len, self.uri, self.trainable,
                                         self.is_tf2)
-    else:
-      qa_model, _ = create_qa_model(
-          self.bert_config,
-          self.seq_len,
-          hub_module_url=self.uri,
-          hub_module_trainable=self.trainable,
-          is_tf2=self.is_tf2)
-      return qa_model
+    qa_model, _ = create_qa_model(
+        self.bert_config,
+        self.seq_len,
+        hub_module_url=self.uri,
+        hub_module_trainable=self.trainable,
+        is_tf2=self.is_tf2)
+    return qa_model
 
   def train(self, train_ds, epochs, steps_per_epoch, **kwargs):
     """Run bert QA training.
@@ -1005,12 +1003,10 @@ class BertQAModelSpec(BertModelSpec):
     dataset_json = file_util.load_json_file(predict_file)
     pred_dataset = dataset_json['data']
 
-    if version_2_with_negative:
-      eval_metrics = squad_evaluate_v2_0.evaluate(pred_dataset, all_predictions,
-                                                  scores_diff_json)
-    else:
-      eval_metrics = squad_evaluate_v1_1.evaluate(pred_dataset, all_predictions)
-    return eval_metrics
+    return (squad_evaluate_v2_0.evaluate(pred_dataset, all_predictions,
+                                         scores_diff_json)
+            if version_2_with_negative else squad_evaluate_v1_1.evaluate(
+                pred_dataset, all_predictions))
 
 
 mobilebert_classifier_spec = functools.partial(

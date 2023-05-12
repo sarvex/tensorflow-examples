@@ -32,9 +32,7 @@ from tensorflow_examples.models.densenet import utils
 def create_sample_dataset(batch_size):
   input_image = tf.random.uniform((32, 32, 3))
   label = tf.zeros((1,))
-  dataset = tf.data.Dataset.from_tensors(
-      (input_image, label)).batch(batch_size)
-  return dataset
+  return tf.data.Dataset.from_tensors((input_image, label)).batch(batch_size)
 
 
 class DensenetTest(tf.test.TestCase):
@@ -120,18 +118,22 @@ class DenseNetBenchmark(tf.test.Benchmark):
     train_loss, train_acc, _, test_acc = train.main(**kwargs)
     wall_time_sec = time.time() - start_time_sec
 
-    metrics = []
-    metrics.append({'name': 'accuracy_top_1',
-                    'value': test_acc,
-                    'min_value': .944,
-                    'max_value': .949})
-
-    metrics.append({'name': 'training_accuracy_top_1',
-                    'value': train_acc})
-
-    metrics.append({'name': 'train_loss',
-                    'value': train_loss})
-
+    metrics = [
+        {
+            'name': 'accuracy_top_1',
+            'value': test_acc,
+            'min_value': 0.944,
+            'max_value': 0.949,
+        },
+        {
+            'name': 'training_accuracy_top_1',
+            'value': train_acc
+        },
+        {
+            'name': 'train_loss',
+            'value': train_loss
+        },
+    ]
     self.report_benchmark(wall_time=wall_time_sec, metrics=metrics)
 
 if __name__ == '__main__':

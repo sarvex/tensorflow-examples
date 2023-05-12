@@ -83,8 +83,7 @@ def calc_from_list(depth, num_blocks, layers_per_block):
       layers_per_block, list) or not isinstance(layers_per_block, tuple):
     raise ValueError("You must pass list or tuple when using 'from_list' mode.")
 
-  if isinstance(layers_per_block, list) or isinstance(layers_per_block, tuple):
-    return list(layers_per_block)
+  return list(layers_per_block)
 
 
 def calc_from_integer(depth, num_blocks, layers_per_block):
@@ -219,12 +218,9 @@ class DenseBlock(tf.keras.Model):
     self.axis = -1 if data_format == "channels_last" else 1
 
     self.blocks = []
-    for _ in range(int(self.num_layers)):
-      self.blocks.append(ConvBlock(growth_rate,
-                                   data_format,
-                                   bottleneck,
-                                   weight_decay,
-                                   dropout_rate))
+    self.blocks.extend(
+        ConvBlock(growth_rate, data_format, bottleneck, weight_decay,
+                  dropout_rate) for _ in range(int(self.num_layers)))
 
   def call(self, x, training=True):
     for i in range(int(self.num_layers)):

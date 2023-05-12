@@ -207,10 +207,15 @@ def parse_example_proto(example_serialized):
   }
   sparse_float32 = tf.io.VarLenFeature(dtype=tf.float32)
   # Sparse features in Example proto.
-  feature_map.update(
-      {k: sparse_float32 for k in [
-          'image/object/bbox/xmin', 'image/object/bbox/ymin',
-          'image/object/bbox/xmax', 'image/object/bbox/ymax']})
+  feature_map |= {
+      k: sparse_float32
+      for k in [
+          'image/object/bbox/xmin',
+          'image/object/bbox/ymin',
+          'image/object/bbox/xmax',
+          'image/object/bbox/ymax',
+      ]
+  }
 
   features = tf.io.parse_single_example(serialized=example_serialized,
                                         features=feature_map)
@@ -285,10 +290,11 @@ def get_parse_record_fn(use_keras_image_data_format=False):
   """
   def parse_record_fn(raw_record, is_training, dtype):
     image, label = parse_record(raw_record, is_training, dtype)
-    if use_keras_image_data_format:
-      if tf.keras.backend.image_data_format() == 'channels_first':
-        image = tf.transpose(image, perm=[2, 0, 1])
+    if (use_keras_image_data_format
+        and tf.keras.backend.image_data_format() == 'channels_first'):
+      image = tf.transpose(image, perm=[2, 0, 1])
     return image, label
+
   return parse_record_fn
 
 

@@ -117,20 +117,20 @@ class EvaluationMetric():
     enable_print(original_stdout)
 
     if self.testdev_dir:
-      # Run on test-dev dataset.
-      box_result_list = []
-      for det in self.detections:
-        box_result_list.append({
-            'image_id': int(det[0]),
-            'category_id': int(det[6]),
-            'bbox': np.around(
-                det[1:5].astype(np.float64), decimals=2).tolist(),
-            'score': float(np.around(det[5], decimals=3)),
-        })
+      box_result_list = [{
+          'image_id':
+          int(det[0]),
+          'category_id':
+          int(det[6]),
+          'bbox':
+          np.around(det[1:5].astype(np.float64), decimals=2).tolist(),
+          'score':
+          float(np.around(det[5], decimals=3)),
+      } for det in self.detections]
       json.encoder.FLOAT_REPR = lambda o: format(o, '.3f')
       # Must be in the formst of 'detections_test-dev2017_xxx_results'.
       fname = 'detections_test-dev2017_test_results'
-      output_path = os.path.join(self.testdev_dir, fname + '.json')
+      output_path = os.path.join(self.testdev_dir, f'{fname}.json')
       logging.info('Writing output json file to: %s', output_path)
       with tf.io.gfile.GFile(output_path, 'w') as fid:
         json.dump(box_result_list, fid)
@@ -211,7 +211,7 @@ class EvaluationMetric():
         # Add annotations.
         indices = np.where(groundtruth_data[i, :, -1] > -1)[0]
         for data in groundtruth_data[i, indices]:
-          box = data[0:4]
+          box = data[:4]
           is_crowd = data[4]
           area = (box[3] - box[1]) * (box[2] - box[0])
           category_id = data[6]
@@ -261,20 +261,20 @@ class EvaluationMetric():
                                       [groundtruth_data, detections], [])
         metrics = tf.numpy_function(self.result, [], tf.float32)
         metrics_dict = {'AP': (metrics, update_op)}
-        return metrics_dict
       else:
         update_op = tf.numpy_function(self.update_state,
                                       [groundtruth_data, detections], [])
         metrics = tf.numpy_function(self.result, [], tf.float32)
-        metrics_dict = {}
-        for i, name in enumerate(self.metric_names):
-          metrics_dict[name] = (metrics[i], update_op)
-
+        metrics_dict = {
+            name: (metrics[i], update_op)
+            for i, name in enumerate(self.metric_names)
+        }
         if self.label_map:
           # process per-class AP.
           label_map = label_util.get_label_map(self.label_map)
           for i, cid in enumerate(sorted(label_map.keys())):
-            name = 'AP_/%s' % label_map[cid]
+            name = f'AP_/{label_map[cid]}'
             metrics_dict[name] = (metrics[i + len(self.metric_names)],
                                   update_op)
-        return metrics_dict
+
+      return metrics_dict

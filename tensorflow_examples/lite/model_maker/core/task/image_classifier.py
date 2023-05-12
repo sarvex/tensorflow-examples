@@ -241,7 +241,7 @@ class ImageClassifier(classification_model.ClassificationModel):
       # a json file with the metadata under the export path
       if export_metadata_json_file:
         metadata_json = model_util.extract_tflite_metadata_json(tflite_filepath)
-        export_json_file = os.path.splitext(tflite_filepath)[0] + '.json'
+        export_json_file = f'{os.path.splitext(tflite_filepath)[0]}.json'
         with open(export_json_file, 'w') as f:
           f.write(metadata_json)
 
@@ -305,8 +305,9 @@ class ImageClassifier(classification_model.ClassificationModel):
     """
     model_spec = ms.get(model_spec)
     if compat.get_tf_behavior() not in model_spec.compat_tf_versions:
-      raise ValueError('Incompatible versions. Expect {}, but got {}.'.format(
-          model_spec.compat_tf_versions, compat.get_tf_behavior()))
+      raise ValueError(
+          f'Incompatible versions. Expect {model_spec.compat_tf_versions}, but got {compat.get_tf_behavior()}.'
+      )
 
     if use_hub_library:
       hparams = get_hub_lib_hparams(

@@ -110,11 +110,8 @@ class MetadataWriter(abc.ABC):
            "of tensor names ({1}).".format(
                len(ordered_tensor_names), len(tensor_names))))
 
-    ordered_metadata = []
     name_meta_dict = dict(zip(tensor_names, tensor_metadata))
-    for name in ordered_tensor_names:
-      ordered_metadata.append(name_meta_dict[name.decode()])
-    return ordered_metadata
+    return [name_meta_dict[name.decode()] for name in ordered_tensor_names]
 
   def _populate_metadata(self, export_metadata_json_file=False):
     """Populates the metadata and label file to the model file."""
@@ -133,8 +130,7 @@ class MetadataWriter(abc.ABC):
     # Displays the model metadata.
     displayer = _metadata.MetadataDisplayer.with_model_file(export_model_path)
     export_json_path = os.path.join(
-        self.export_directory,
-        os.path.splitext(model_basename)[0] + ".json")
+        self.export_directory, f"{os.path.splitext(model_basename)[0]}.json")
     if export_metadata_json_file:
       with open(export_json_path, "w") as f:
         f.write(displayer.get_metadata_json())

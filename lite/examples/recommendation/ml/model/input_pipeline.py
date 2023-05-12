@@ -168,7 +168,7 @@ def _get_feature_spec(feature_type: input_config_pb2.FeatureType,
     dtype = tf.float32
     default_value = FLOAT_DEFAULT_VALUE
   else:
-    raise ValueError('Unsupported feature type {}'.format(feature_type))
+    raise ValueError(f'Unsupported feature type {feature_type}')
 
   return tf.io.FixedLenFeature(
       shape=[feature_length],
@@ -179,12 +179,15 @@ def _get_feature_spec(feature_type: input_config_pb2.FeatureType,
 def _get_serving_feature_spec(feature_name: str,
                               feature_type: input_config_pb2.FeatureType,
                               feature_length: int) -> tf.TensorSpec:
-  if feature_type == input_config_pb2.FeatureType.INT or feature_type == input_config_pb2.FeatureType.STRING:
+  if feature_type in [
+      input_config_pb2.FeatureType.INT,
+      input_config_pb2.FeatureType.STRING,
+  ]:
     dtype = tf.dtypes.int32
   elif feature_type == input_config_pb2.FeatureType.FLOAT:
     dtype = tf.dtypes.float32
   else:
-    raise ValueError('Unsupported feature type {}'.format(feature_type))
+    raise ValueError(f'Unsupported feature type {feature_type}')
   return tf.TensorSpec(shape=[feature_length], dtype=dtype, name=feature_name)
 
 
@@ -220,8 +223,7 @@ def decode_example(
   """
   features_by_name = features_and_vocabs_by_name.features_by_name
   vocabs_by_name = features_and_vocabs_by_name.vocabs_by_name
-  name_to_features = {}
-  name_to_features[label_feature_name] = tf.io.FixedLenFeature([1], tf.int64)
+  name_to_features = {label_feature_name: tf.io.FixedLenFeature([1], tf.int64)}
   for feature_name, feature in features_by_name.items():
     name_to_features[feature_name] = _get_feature_spec(
         feature_type=feature.feature_type,
@@ -229,13 +231,11 @@ def decode_example(
   record_features = tf.io.parse_single_example(serialized_proto,
                                                name_to_features)
 
-  features = {}
-  for feature_name, feature_value in record_features.items():
-    if feature_name in vocabs_by_name:
-      features[feature_name] = vocabs_by_name[feature_name].lookup(
-          feature_value)
-    else:
-      features[feature_name] = feature_value
+  features = {
+      feature_name: vocabs_by_name[feature_name].lookup(feature_value)
+      if feature_name in vocabs_by_name else feature_value
+      for feature_name, feature_value in record_features.items()
+  }
   features = {
       k: v if v.dtype != tf.int64 else tf.cast(v, tf.int32)
       for k, v in features.items()

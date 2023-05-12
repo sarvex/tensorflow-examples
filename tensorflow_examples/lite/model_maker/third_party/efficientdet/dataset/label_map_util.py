@@ -47,10 +47,7 @@ def create_category_index(categories):
     category_index: a dict containing the same entries as categories, but keyed
       by the 'id' field of each category.
   """
-  category_index = {}
-  for cat in categories:
-    category_index[cat['id']] = cat
-  return category_index
+  return {cat['id']: cat for cat in categories}
 
 
 def get_max_label_map_index(label_map):
@@ -62,7 +59,7 @@ def get_max_label_map_index(label_map):
   Returns:
     an integer
   """
-  return max([item.id for item in label_map.item])
+  return max(item.id for item in label_map.item)
 
 
 def convert_label_map_to_categories(label_map,
@@ -97,11 +94,10 @@ def convert_label_map_to_categories(label_map,
   list_of_ids_already_added = []
   if not label_map:
     label_id_offset = 1
-    for class_id in range(max_num_classes):
-      categories.append({
-          'id': class_id + label_id_offset,
-          'name': 'category_{}'.format(class_id + label_id_offset)
-      })
+    categories.extend({
+        'id': class_id + label_id_offset,
+        'name': f'category_{class_id + label_id_offset}',
+    } for class_id in range(max_num_classes))
     return categories
   for item in label_map.item:
     if not 0 < item.id <= max_num_classes:
@@ -121,8 +117,9 @@ def convert_label_map_to_categories(label_map,
         list_of_keypoint_ids = []
         for kv in item.keypoints:
           if kv.id in list_of_keypoint_ids:
-            raise ValueError('Duplicate keypoint ids are not allowed. '
-                             'Found {} more than once'.format(kv.id))
+            raise ValueError(
+                f'Duplicate keypoint ids are not allowed. Found {kv.id} more than once'
+            )
           keypoints[kv.label] = kv.id
           list_of_keypoint_ids.append(kv.id)
         category['keypoints'] = keypoints

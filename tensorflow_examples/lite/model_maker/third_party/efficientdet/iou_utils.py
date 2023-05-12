@@ -98,14 +98,12 @@ def _iou_per_anchor(pred_boxes: FloatType,
   enclose_xmax = tf.maximum(p_xmax, t_xmax)
 
   assert iou_type in ('giou', 'diou', 'ciou')
-  if iou_type == 'giou':  # giou is the generalized iou.
+  if iou_type == 'giou':# giou is the generalized iou.
     enclose_width = tf.maximum(zero, enclose_xmax - enclose_xmin)
     enclose_height = tf.maximum(zero, enclose_ymax - enclose_ymin)
     enclose_area = enclose_width * enclose_height
-    giou_v = iou_v - tf.math.divide_no_nan(
+    return iou_v - tf.math.divide_no_nan(
         (enclose_area - union_area), enclose_area)
-    return giou_v
-
   assert iou_type in ('diou', 'ciou')
   p_center = tf.stack([(p_ymin + p_ymax) / 2, (p_xmin + p_xmax) / 2], axis=-1)
   t_center = tf.stack([(t_ymin + t_ymax) / 2, (t_xmin + t_xmax) / 2], axis=-1)
@@ -159,8 +157,7 @@ def iou_loss(pred_boxes: FloatType,
     IoU loss float `Tensor`.
   """
   if iou_type not in ('iou', 'ciou', 'diou', 'giou'):
-    raise ValueError(
-        'Unknown loss_type {}, not iou/ciou/diou/giou'.format(iou_type))
+    raise ValueError(f'Unknown loss_type {iou_type}, not iou/ciou/diou/giou')
 
   pred_boxes = tf.convert_to_tensor(pred_boxes)
   target_boxes = tf.cast(target_boxes, pred_boxes.dtype)

@@ -134,8 +134,7 @@ class ModelInspector(object):
     train_writer.add_graph(tf.get_default_graph())
     train_writer.flush()
 
-    all_outputs = list(cls_outputs.values()) + list(box_outputs.values())
-    return all_outputs
+    return list(cls_outputs.values()) + list(box_outputs.values())
 
   def export_saved_model(self, **kwargs):
     """Export a saved model for inference."""
@@ -171,7 +170,7 @@ class ModelInspector(object):
       batch_files = all_files[i * batch_size:(i + 1) * batch_size]
       height, width = self.model_config.image_size
       images = [Image.open(f) for f in batch_files]
-      if len(set([m.size for m in images])) > 1:
+      if len({m.size for m in images}) > 1:
         # Resize only if images in the same batch have different sizes.
         images = [m.resize(height, width) for m in images]
       raw_images = [np.array(m) for m in images]
@@ -184,9 +183,9 @@ class ModelInspector(object):
       for j in range(size_before_pad):
         img = driver.visualize(raw_images[j], detections_bs[j], **kwargs)
         img_id = str(i * batch_size + j)
-        output_image_path = os.path.join(output_dir, img_id + '.jpg')
+        output_image_path = os.path.join(output_dir, f'{img_id}.jpg')
         Image.fromarray(img).save(output_image_path)
-        print('writing file to %s' % output_image_path)
+        print(f'writing file to {output_image_path}')
 
   def saved_model_benchmark(self,
                             image_path_pattern,
@@ -204,7 +203,7 @@ class ModelInspector(object):
     raw_images = []
     all_files = list(tf.io.gfile.glob(image_path_pattern))
     if len(all_files) < self.batch_size:
-      all_files = all_files * (self.batch_size // len(all_files) + 1)
+      all_files *= self.batch_size // len(all_files) + 1
     raw_images = [np.array(Image.open(f)) for f in all_files[:self.batch_size]]
     driver.benchmark(raw_images, trace_filename)
 
@@ -222,7 +221,7 @@ class ModelInspector(object):
 
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
-      print('Error opening input video: {}'.format(video_path))
+      print(f'Error opening input video: {video_path}')
 
     out_ptr = None
     if output_video:
@@ -258,7 +257,7 @@ class ModelInspector(object):
 
   def build_and_save_model(self):
     """build and save the model into self.logdir."""
-    with tf.Graph().as_default(), tf.Session() as sess:
+    with (tf.Graph().as_default(), tf.Session() as sess):
       # Build model with inputs and labels.
       inputs = tf.placeholder(tf.float32, name='input', shape=self.inputs_shape)
       outputs = self.build_model(inputs)
@@ -281,7 +280,7 @@ class ModelInspector(object):
       all_saver = tf.train.Saver(save_relative_paths=True)
       all_saver.save(sess, os.path.join(self.logdir, self.model_name))
 
-      tf_graph = os.path.join(self.logdir, self.model_name + '_train.pb')
+      tf_graph = os.path.join(self.logdir, f'{self.model_name}_train.pb')
       with tf.io.gfile.GFile(tf_graph, 'wb') as f:
         f.write(sess.graph_def.SerializeToString())
 
@@ -297,7 +296,7 @@ class ModelInspector(object):
 
   def freeze_model(self) -> Tuple[Text, Text]:
     """Freeze model and convert them into tflite and tf graph."""
-    with tf.Graph().as_default(), tf.Session() as sess:
+    with (tf.Graph().as_default(), tf.Session() as sess):
       inputs = tf.placeholder(tf.float32, name='input', shape=self.inputs_shape)
       outputs = self.build_model(inputs)
 
@@ -319,12 +318,14 @@ class ModelInspector(object):
       graphdef = tf.graph_util.convert_variables_to_constants(
           sess, sess.graph_def, output_node_names)
 
-      tf_graph = os.path.join(self.logdir, self.model_name + '_frozen.pb')
+      tf_graph = os.path.join(self.logdir, f'{self.model_name}_frozen.pb')
       tf.io.gfile.GFile(tf_graph, 'wb').write(graphdef.SerializeToString())
 
-      # export savaed model.
-      output_dict = {'class_predict_%d' % i: outputs[i] for i in range(5)}
-      output_dict.update({'box_predict_%d' % i: outputs[5+i] for i in range(5)})
+      output_dict = {'class_predict_%d' % i: outputs[i]
+                     for i in range(5)} | {
+                         'box_predict_%d' % i: outputs[5 + i]
+                         for i in range(5)
+                     }
       signature_def_map = {
           'serving_default':
               tf.saved_model.predict_signature_def(
@@ -356,7 +357,7 @@ class ModelInspector(object):
       graphdef = self.freeze_model()
 
     if num_threads > 0:
-      print('num_threads for benchmarking: {}'.format(num_threads))
+      print(f'num_threads for benchmarking: {num_threads}')
       sess_config = tf.ConfigProto(
           intra_op_parallelism_threads=num_threads,
           inter_op_parallelism_threads=1)
@@ -391,7 +392,7 @@ class ModelInspector(object):
       graphdef = tf.graph_util.convert_variables_to_constants(
           sess, sess.graph_def, output_name)
 
-    with tf.Graph().as_default(), tf.Session(config=sess_config) as sess:
+    with (tf.Graph().as_default(), tf.Session(config=sess_config) as sess):
       tf.import_graph_def(graphdef, name='')
 
       for i in range(warmup_runs):
@@ -399,9 +400,9 @@ class ModelInspector(object):
         sess.run(output_name, feed_dict={input_name: img})
         logging.info('Warm up: {} {:.4f}s'.format(i, time.time() - start_time))
 
-      print('Start benchmark runs total={}'.format(bm_runs))
+      print(f'Start benchmark runs total={bm_runs}')
       start = time.perf_counter()
-      for i in range(bm_runs):
+      for _ in range(bm_runs):
         sess.run(output_name, feed_dict={input_name: img})
       end = time.perf_counter()
       inference_time = (end - start) / bm_runs
@@ -433,8 +434,7 @@ class ModelInspector(object):
         input_graph_def=graph_def,
         precision_mode=self.tensorrt)
     infer_graph = converter.convert()
-    goutput = tf.import_graph_def(infer_graph, return_elements=fetches)
-    return goutput
+    return tf.import_graph_def(infer_graph, return_elements=fetches)
 
   def run_model(self, runmode, **kwargs):
     """Run the model on devices."""
@@ -476,7 +476,7 @@ class ModelInspector(object):
           num_threads=kwargs.get('threads', 0),
           trace_filename=kwargs.get('trace_filename', None))
     else:
-      raise ValueError('Unkown runmode {}'.format(runmode))
+      raise ValueError(f'Unkown runmode {runmode}')
 
 
 def main(_):

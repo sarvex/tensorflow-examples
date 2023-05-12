@@ -29,7 +29,7 @@ def get_model_builder(model_name):
   elif model_name.startswith('efficientnet-'):
     return efficientnet_builder
   else:
-    raise ValueError('Unknown model name {}'.format(model_name))
+    raise ValueError(f'Unknown model name {model_name}')
 
 
 def get_model(model_name, override_params=None, model_dir=None):
@@ -61,7 +61,7 @@ def get_model(model_name, override_params=None, model_dir=None):
   elif model_name.startswith('efficientnet-'):
     builder = efficientnet_builder
   else:
-    raise ValueError('Unknown model name {}'.format(model_name))
+    raise ValueError(f'Unknown model name {model_name}')
 
   blocks_args, global_params = builder.get_model_params(model_name,
                                                         override_params)

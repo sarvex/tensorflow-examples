@@ -66,12 +66,10 @@ class ContextEncoder(tf.keras.layers.Layer):
     self._final_embedding_dim = self._input_config.label_feature.embedding_dim
     # Set up hidden layers.
     self._hidden_layers = []
-    for i, layer_dim in enumerate(self._model_config.hidden_layer_dims):
-      self._hidden_layers.append(
-          tf.keras.layers.Dense(
-              units=layer_dim,
-              name='hidden_layer{}'.format(i),
-              activation=tf.nn.relu))
+    self._hidden_layers.extend(
+        tf.keras.layers.Dense(
+            units=layer_dim, name=f'hidden_layer{i}', activation=tf.nn.relu)
+        for i, layer_dim in enumerate(self._model_config.hidden_layer_dims))
     # Append final top layer, dimension of which should equal final embedding
     # dimension.
     self._hidden_layers.append(
@@ -148,7 +146,8 @@ class FeatureGroupEncoder(tf.keras.layers.Layer):
             embeddings_initializer=tf.keras.initializers.truncated_normal(
                 mean=0.0, stddev=1.0 / math.sqrt(feature.embedding_dim)),
             mask_zero=True,
-            name=feature.feature_name+'embedding_layer')
+            name=f'{feature.feature_name}embedding_layer',
+        )
         self._embedding_layer_dict[feature.feature_name] = embedding_layer
       else:
         self._nonembedding_feature_names.append(feature.feature_name)
@@ -157,15 +156,14 @@ class FeatureGroupEncoder(tf.keras.layers.Layer):
     if self._feature_group.encoder_type == input_config_pb2.EncoderType.CNN:
       assert self._model_config.conv_num_filter_ratios
       assert self._model_config.conv_kernel_size
-      for ratio in self._model_config.conv_num_filter_ratios:
-        self._conv1d_layers.append(
-            tf.keras.layers.Conv1D(
-                filters=self._final_embedding_dim * ratio,
-                kernel_size=self._model_config.conv_kernel_size,
-                strides=self._model_config.conv_kernel_size,
-                padding='same',
-                activation='relu'))
-    # Prepare LSTM layer.
+      self._conv1d_layers.extend(
+          tf.keras.layers.Conv1D(
+              filters=self._final_embedding_dim * ratio,
+              kernel_size=self._model_config.conv_kernel_size,
+              strides=self._model_config.conv_kernel_size,
+              padding='same',
+              activation='relu',
+          ) for ratio in self._model_config.conv_num_filter_ratios)
     elif self._feature_group.encoder_type == input_config_pb2.EncoderType.LSTM:
       assert self._model_config.lstm_num_units
       self._lstm_layer = tf.keras.layers.LSTM(
@@ -233,7 +231,7 @@ class FeatureGroupEncoder(tf.keras.layers.Layer):
     elif self._feature_group.encoder_type == input_config_pb2.EncoderType.LSTM:
       embedding = self._lstm_layer(embedding)
     else:
-      raise ValueError('Unsupported encoder type %s.' %
-                       self._feature_group.encoder_type)
+      raise ValueError(
+          f'Unsupported encoder type {self._feature_group.encoder_type}.')
 
     return embedding

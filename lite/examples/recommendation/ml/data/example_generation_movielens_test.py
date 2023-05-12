@@ -13,6 +13,7 @@
 #   limitations under the License.
 """Tests for example_generation_movielens."""
 
+
 import pandas as pd
 import tensorflow as tf
 from data import example_generation_movielens as example_gen
@@ -22,27 +23,27 @@ from google.protobuf import text_format
 
 MOVIES_DF = pd.DataFrame([
     {
-        'MovieId': int(1),
+        'MovieId': 1,
         'Title': 'Toy Story (1995)',
-        'Genres': 'Animation|Children|Comedy'
+        'Genres': 'Animation|Children|Comedy',
     },
     {
-        'MovieId': int(2),
+        'MovieId': 2,
         'Title': 'Four Weddings and a Funeral (1994)',
-        'Genres': 'Comedy|Romance'
+        'Genres': 'Comedy|Romance',
     },
     {
-        'MovieId': int(3),
+        'MovieId': 3,
         'Title': 'Lion King, The (1994)',
-        'Genres': 'Adventure|Animation|Children'
+        'Genres': 'Adventure|Animation|Children',
     },
     {
-        'MovieId': int(4),
+        'MovieId': 4,
         'Title': 'Forrest Gump (1994)',
-        'Genres': 'Comedy|Drama|Romance'
+        'Genres': 'Comedy|Drama|Romance',
     },
     {
-        'MovieId': int(5),
+        'MovieId': 5,
         'Title': 'Little Women (1994)',
         'Genres': 'Drama'
     },
@@ -50,32 +51,32 @@ MOVIES_DF = pd.DataFrame([
 
 RATINGS_DF = pd.DataFrame([
     {
-        'UserID': int(1),
-        'MovieId': int(1),
+        'UserID': 1,
+        'MovieId': 1,
         'Rating': 3.5,
         'Timestamp': 0
     },
     {
-        'UserID': int(1),
-        'MovieId': int(2),
+        'UserID': 1,
+        'MovieId': 2,
         'Rating': 4.0,
         'Timestamp': 1
     },
     {
-        'UserID': int(1),
-        'MovieId': int(3),
+        'UserID': 1,
+        'MovieId': 3,
         'Rating': 4.5,
         'Timestamp': 2
     },
     {
-        'UserID': int(1),
-        'MovieId': int(4),
+        'UserID': 1,
+        'MovieId': 4,
         'Rating': 4.7,
         'Timestamp': 3
     },
     {
-        'UserID': int(2),
-        'MovieId': int(5),
+        'UserID': 2,
+        'MovieId': 5,
         'Rating': 4.0,
         'Timestamp': 1
     },

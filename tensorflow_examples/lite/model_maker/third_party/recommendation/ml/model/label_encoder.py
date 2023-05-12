@@ -48,10 +48,10 @@ class LabelEncoder(tf.keras.layers.Layer):
         self._label_feature.vocab_size,
         self._label_feature.embedding_dim,
         embeddings_initializer=tf.keras.initializers.truncated_normal(
-            mean=0.0,
-            stddev=1.0 / math.sqrt(self._label_feature.embedding_dim)),
+            mean=0.0, stddev=1.0 / math.sqrt(self._label_feature.embedding_dim)),
         mask_zero=True,
-        name=self.label_name + 'embedding_layer')
+        name=f'{self.label_name}embedding_layer',
+    )
 
   @property
   def label_name(self):

@@ -199,7 +199,7 @@ class ObjectDetector(custom_model.CustomModel):
 
         if export_metadata_json_file:
           metadata_json = writer.get_populated_metadata_json()
-          export_json_path = os.path.splitext(tflite_filepath)[0] + '.json'
+          export_json_path = f'{os.path.splitext(tflite_filepath)[0]}.json'
           with open(export_json_path, 'w') as f:
             f.write(metadata_json)
 
@@ -250,8 +250,9 @@ class ObjectDetector(custom_model.CustomModel):
     if train_whole_model:
       model_spec.config.var_freeze_expr = None
     if compat.get_tf_behavior() not in model_spec.compat_tf_versions:
-      raise ValueError('Incompatible versions. Expect {}, but got {}.'.format(
-          model_spec.compat_tf_versions, compat.get_tf_behavior()))
+      raise ValueError(
+          f'Incompatible versions. Expect {model_spec.compat_tf_versions}, but got {compat.get_tf_behavior()}.'
+      )
 
     object_detector = cls(model_spec, train_data.label_map, train_data)
 

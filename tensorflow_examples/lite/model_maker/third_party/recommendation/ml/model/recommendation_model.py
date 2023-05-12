@@ -68,11 +68,11 @@ class RecommendationModel(tf.keras.Model):
         self._input_config.label_feature.vocab_size)
     label = {self._label_encoder.label_name: full_vocab_input_label}
     full_vocab_label_embeddings = self._label_encoder(label)
-    full_vocab_dotproduct = self._dotproduct_layer(
+    return self._dotproduct_layer(
         context_embeddings=context_embeddings,
         label_embeddings=full_vocab_label_embeddings,
-        top_k=None)[0]
-    return full_vocab_dotproduct
+        top_k=None,
+    )[0]
 
   @tf.function
   def serve(self, **kwargs):

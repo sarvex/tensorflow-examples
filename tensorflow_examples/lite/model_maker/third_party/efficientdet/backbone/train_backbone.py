@@ -169,11 +169,10 @@ def main(_) -> None:
   elif FLAGS.strategy == 'gpus':
     ds_strategy = tf.distribute.MirroredStrategy()
     logging.info('All devices: %s', tf.config.list_physical_devices('GPU'))
+  elif tf.config.list_physical_devices('GPU'):
+    ds_strategy = tf.distribute.OneDeviceStrategy('device:GPU:0')
   else:
-    if tf.config.list_physical_devices('GPU'):
-      ds_strategy = tf.distribute.OneDeviceStrategy('device:GPU:0')
-    else:
-      ds_strategy = tf.distribute.OneDeviceStrategy('device:CPU:0')
+    ds_strategy = tf.distribute.OneDeviceStrategy('device:CPU:0')
 
   with ds_strategy.scope():
     (ds_train, ds_val), ds_info = tfds.load(

@@ -53,7 +53,7 @@ def build_batch_norm(is_training_bn: bool,
   axis = 1 if data_format == 'channels_first' else -1
   batch_norm_class = utils.batch_norm_class(is_training_bn, strategy)
 
-  bn_layer = batch_norm_class(
+  return batch_norm_class(
       axis=axis,
       momentum=momentum,
       epsilon=epsilon,
@@ -61,9 +61,8 @@ def build_batch_norm(is_training_bn: bool,
       scale=True,
       beta_initializer=beta_initializer,
       gamma_initializer=gamma_initializer,
-      name=name)
-
-  return bn_layer
+      name=name,
+  )
 
 
 def get_ema_vars(model):
@@ -73,11 +72,7 @@ def get_ema_vars(model):
     # We maintain mva for batch norm moving mean and variance as well.
     if 'moving_mean' in v.name or 'moving_variance' in v.name:
       ema_vars.append(v)
-  ema_vars_dict = dict()
-  # Remove duplicate vars
-  for var in ema_vars:
-    ema_vars_dict[var.ref()] = var
-  return ema_vars_dict
+  return {var.ref(): var for var in ema_vars}
 
 
 def average_name(ema, var):
@@ -108,12 +103,12 @@ def load_from_hub_checkpoint(model, ckpt_path_or_file):
       if var_name.startswith(name_prefix):
         cpt_var_name = var_name[len(name_prefix):]  # remove the name_prefix
         cpt_var_name = cpt_var_name.replace('/', '.S')
-        cpt_var_name = hub_name_prefix + '/' + cpt_var_name
+        cpt_var_name = f'{hub_name_prefix}/{cpt_var_name}'
         if name_prefix:
           cpt_var_name = cpt_var_name.replace(':0', '')
         break
 
-    return cpt_var_name + '/.ATTRIBUTES/VARIABLE_VALUE'
+    return f'{cpt_var_name}/.ATTRIBUTES/VARIABLE_VALUE'
 
   for var in model.weights:
     cpt_var_name = _get_cpt_var_name(var.name)
@@ -121,8 +116,9 @@ def load_from_hub_checkpoint(model, ckpt_path_or_file):
 
     logging.log_first_n(
         logging.INFO,
-        'Init %s from %s (%s)' % (var.name, cpt_var_name, ckpt_path_or_file),
-        10)
+        f'Init {var.name} from {cpt_var_name} ({ckpt_path_or_file})',
+        10,
+    )
 
 
 def restore_ckpt(model,
@@ -194,7 +190,7 @@ def restore_ckpt(model,
     for key, var in var_dict.items():
       if key in var_shape_map:
         if var_shape_map[key] != var.shape:
-          msg = 'Shape mismatch: %s' % key
+          msg = f'Shape mismatch: {key}'
           if skip_mismatch:
             logging.warning(msg)
           else:
@@ -205,7 +201,7 @@ def restore_ckpt(model,
               logging.INFO, f'Init {var.name} from {key} ({ckpt_path_or_file})',
               10)
       else:
-        msg = 'Not found %s in %s' % (key, ckpt_path_or_file)
+        msg = f'Not found {key} in {ckpt_path_or_file}'
         if skip_mismatch:
           logging.warning(msg)
         else:

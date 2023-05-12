@@ -119,19 +119,19 @@ class FNode(tf.keras.layers.Layer):
     elif self.weight_method == 'sum':
       new_node = add_n(nodes)
     else:
-      raise ValueError('unknown weight_method %s' % self.weight_method)
+      raise ValueError(f'unknown weight_method {self.weight_method}')
 
     return new_node
 
   def _add_wsm(self, initializer, shape=None):
     for i, _ in enumerate(self.inputs_offsets):
-      name = 'WSM' + ('' if i == 0 else '_' + str(i))
+      name = 'WSM' + ('' if i == 0 else f'_{str(i)}')
       self.vars.append(
           self.add_weight(initializer=initializer, name=name, shape=shape))
 
   def build(self, feats_shape):
     for i, input_offset in enumerate(self.inputs_offsets):
-      name = 'resample_{}_{}_{}'.format(i, input_offset, len(feats_shape))
+      name = f'resample_{i}_{input_offset}_{len(feats_shape)}'
       self.resample_layers.append(
           ResampleFeatureMap(
               self.feat_level,
@@ -143,14 +143,9 @@ class FNode(tf.keras.layers.Layer):
               data_format=self.data_format,
               model_optimizations=self.model_optimizations,
               name=name))
-    if self.weight_method == 'attn':
+    if self.weight_method in ['attn', 'fastattn']:
       self._add_wsm('ones')
-    elif self.weight_method == 'fastattn':
-      self._add_wsm('ones')
-    elif self.weight_method == 'channel_attn':
-      num_filters = int(self.fpn_num_filters)
-      self._add_wsm(tf.ones, num_filters)
-    elif self.weight_method == 'channel_fastattn':
+    elif self.weight_method in ['channel_attn', 'channel_fastattn']:
       num_filters = int(self.fpn_num_filters)
       self._add_wsm(tf.ones, num_filters)
     self.op_after_combine = OpAfterCombine(
@@ -162,7 +157,8 @@ class FNode(tf.keras.layers.Layer):
         self.data_format,
         self.strategy,
         self.model_optimizations,
-        name='op_after_combine{}'.format(len(feats_shape)))
+        name=f'op_after_combine{len(feats_shape)}',
+    )
     self.built = True
     super().build(feats_shape)
 
@@ -287,7 +283,7 @@ class ResampleFeatureMap(tf.keras.layers.Layer):
           strides=[height_stride_size, width_stride_size],
           padding='SAME',
           data_format=self.data_format)(inputs)
-    raise ValueError('Unsupported pooling type {}.'.format(self.pooling_type))
+    raise ValueError(f'Unsupported pooling type {self.pooling_type}.')
 
   def _upsample2d(self, inputs, target_height, target_width, training=False):
     return tf.cast(
@@ -327,8 +323,8 @@ class ResampleFeatureMap(tf.keras.layers.Layer):
         feat = self._upsample2d(feat, target_height, target_width, training)
     else:
       raise ValueError(
-          'Incompatible Resampling : feat shape {}x{} target_shape: {}x{}'
-          .format(height, width, target_height, target_width))
+          f'Incompatible Resampling : feat shape {height}x{width} target_shape: {target_height}x{target_width}'
+      )
 
     return feat
 
@@ -405,15 +401,14 @@ class ClassNet(tf.keras.layers.Layer):
               padding='same',
               name='class-%d' % i))
 
-      bn_per_level = []
-      for level in range(self.min_level, self.max_level + 1):
-        bn_per_level.append(
-            util_keras.build_batch_norm(
-                is_training_bn=self.is_training_bn,
-                strategy=self.strategy,
-                data_format=self.data_format,
-                name='class-%d-bn-%d' % (i, level),
-            ))
+      bn_per_level = [
+          util_keras.build_batch_norm(
+              is_training_bn=self.is_training_bn,
+              strategy=self.strategy,
+              data_format=self.data_format,
+              name='class-%d-bn-%d' % (i, level),
+          ) for level in range(self.min_level, self.max_level + 1)
+      ]
       self.bns.append(bn_per_level)
 
     self.classes = self.classes_layer(
@@ -456,19 +451,17 @@ class ClassNet(tf.keras.layers.Layer):
   @classmethod
   def conv2d_layer(cls, separable_conv, data_format):
     """Gets the conv2d layer in ClassNet class."""
-    if separable_conv:
-      conv2d_layer = functools.partial(
-          tf.keras.layers.SeparableConv2D,
-          depth_multiplier=1,
-          data_format=data_format,
-          pointwise_initializer=tf.initializers.variance_scaling(),
-          depthwise_initializer=tf.initializers.variance_scaling())
-    else:
-      conv2d_layer = functools.partial(
-          tf.keras.layers.Conv2D,
-          data_format=data_format,
-          kernel_initializer=tf.random_normal_initializer(stddev=0.01))
-    return conv2d_layer
+    return (functools.partial(
+        tf.keras.layers.SeparableConv2D,
+        depth_multiplier=1,
+        data_format=data_format,
+        pointwise_initializer=tf.initializers.variance_scaling(),
+        depthwise_initializer=tf.initializers.variance_scaling(),
+    ) if separable_conv else functools.partial(
+        tf.keras.layers.Conv2D,
+        data_format=data_format,
+        kernel_initializer=tf.random_normal_initializer(stddev=0.01),
+    ))
 
   @classmethod
   def classes_layer(cls, conv2d_layer, num_classes, num_anchors, name):
@@ -568,14 +561,14 @@ class BoxNet(tf.keras.layers.Layer):
                 padding='same',
                 name='box-%d' % i))
 
-      bn_per_level = []
-      for level in range(self.min_level, self.max_level + 1):
-        bn_per_level.append(
-            util_keras.build_batch_norm(
-                is_training_bn=self.is_training_bn,
-                strategy=self.strategy,
-                data_format=self.data_format,
-                name='box-%d-bn-%d' % (i, level)))
+      bn_per_level = [
+          util_keras.build_batch_norm(
+              is_training_bn=self.is_training_bn,
+              strategy=self.strategy,
+              data_format=self.data_format,
+              name='box-%d-bn-%d' % (i, level),
+          ) for level in range(self.min_level, self.max_level + 1)
+      ]
       self.bns.append(bn_per_level)
 
       self.boxes = self.boxes_layer(
@@ -689,7 +682,8 @@ class SegmentationHead(tf.keras.layers.Layer):
               is_training_bn=is_training_bn,
               data_format=data_format,
               strategy=strategy,
-              name='bn_' + str(level)))
+              name=f'bn_{str(level)}',
+          ))
     self.head_transpose = tf.keras.layers.Conv2DTranspose(
         num_classes, 3, strides=2, padding='same')
 
@@ -823,20 +817,18 @@ class EfficientDetNet(tf.keras.Model):
 
     # Feature network.
     self.resample_layers = []  # additional resampling layers.
-    for level in range(6, config.max_level + 1):
-      # Adds a coarser level by downsampling the last feature map.
-      self.resample_layers.append(
-          ResampleFeatureMap(
-              feat_level=(level - config.min_level),
-              target_num_channels=config.fpn_num_filters,
-              apply_bn=config.apply_bn_for_resampling,
-              is_training_bn=config.is_training_bn,
-              conv_after_downsample=config.conv_after_downsample,
-              strategy=config.strategy,
-              data_format=config.data_format,
-              model_optimizations=config.model_optimizations,
-              name='resample_p%d' % level,
-          ))
+    self.resample_layers.extend(
+        ResampleFeatureMap(
+            feat_level=(level - config.min_level),
+            target_num_channels=config.fpn_num_filters,
+            apply_bn=config.apply_bn_for_resampling,
+            is_training_bn=config.is_training_bn,
+            conv_after_downsample=config.conv_after_downsample,
+            strategy=config.strategy,
+            data_format=config.data_format,
+            model_optimizations=config.model_optimizations,
+            name='resample_p%d' % level,
+        ) for level in range(6, config.max_level + 1))
     self.fpn_cells = FPNCells(config)
 
     # class/box output prediction network.
@@ -875,7 +867,7 @@ class EfficientDetNet(tf.keras.Model):
             data_format=config.data_format,
             feature_only=feature_only)
 
-      if head == 'segmentation':
+      elif head == 'segmentation':
         self.seg_head = SegmentationHead(
             num_classes=config.seg_num_classes,
             num_filters=num_filters,
@@ -888,10 +880,7 @@ class EfficientDetNet(tf.keras.Model):
 
   def _init_set_name(self, name, zero_based=True):
     """A hack to allow empty model name for legacy checkpoint compitability."""
-    if name == '':  # pylint: disable=g-explicit-bool-comparison
-      self._name = name
-    else:
-      self._name = super().__init__(name, zero_based)
+    self._name = name if name == '' else super().__init__(name, zero_based)
 
   def call(self, inputs, training):
     """Returns the network features.
@@ -988,7 +977,7 @@ class EfficientDetModel(EfficientDetNet):
         raise ValueError('scales not supported for TFLite post-processing')
       return postprocess.postprocess_tflite(self.config.as_dict(), cls_outputs,
                                             box_outputs)
-    raise ValueError('Unsupported postprocess mode {}'.format(mode))
+    raise ValueError(f'Unsupported postprocess mode {mode}')
 
   def call(self, inputs, training=False, pre_mode='infer', post_mode='global'):
     """Call this model.

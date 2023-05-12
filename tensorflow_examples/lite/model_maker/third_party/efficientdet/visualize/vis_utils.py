@@ -542,7 +542,10 @@ def draw_side_by_side_evaluation_image(eval_dict,
   # Add the batch dimension if the eval_dict is for single example.
   if len(eval_dict[detection_fields.detection_classes].shape) == 1:
     for key in eval_dict:
-      if key != input_data_fields.original_image and key != input_data_fields.image_additional_channels:
+      if key not in [
+          input_data_fields.original_image,
+          input_data_fields.image_additional_channels,
+      ]:
         eval_dict[key] = tf.expand_dims(eval_dict[key], 0)
 
   for indx in range(eval_dict[input_data_fields.original_image].shape[0]):
@@ -708,8 +711,8 @@ def draw_keypoints_on_image(image,
   keypoints_x = [k[1] for k in keypoints]
   keypoints_y = [k[0] for k in keypoints]
   if use_normalized_coordinates:
-    keypoints_x = tuple([im_width * x for x in keypoints_x])
-    keypoints_y = tuple([im_height * y for y in keypoints_y])
+    keypoints_x = tuple(im_width * x for x in keypoints_x)
+    keypoints_y = tuple(im_height * y for y in keypoints_y)
   for keypoint_x, keypoint_y in zip(keypoints_x, keypoints_y):
     draw.ellipse([(keypoint_x - radius, keypoint_y - radius),
                   (keypoint_x + radius, keypoint_y + radius)],
@@ -856,23 +859,16 @@ def visualize_boxes_and_labels_on_image_array(
         box_to_color_map[box] = groundtruth_box_visualization_color
       else:
         display_str = ''
-        if not skip_labels:
-          if not agnostic_mode:
-            if classes[i] in six.viewkeys(category_index):
-              class_name = category_index[classes[i]]['name']
-            else:
-              class_name = 'N/A'
-            display_str = str(class_name)
+        if not skip_labels and not agnostic_mode:
+          class_name = (category_index[classes[i]]['name'] if classes[i]
+                        in six.viewkeys(category_index) else 'N/A')
+          display_str = str(class_name)
         if not skip_scores:
-          if not display_str:
-            display_str = '{}%'.format(int(100 * scores[i]))
-          else:
-            display_str = '{}: {}%'.format(display_str, int(100 * scores[i]))
+          display_str = (f'{int(100 * scores[i])}%' if not display_str else
+                         f'{display_str}: {int(100 * scores[i])}%')
         if not skip_track_ids and track_ids is not None:
-          if not display_str:
-            display_str = 'ID {}'.format(track_ids[i])
-          else:
-            display_str = '{}: ID {}'.format(display_str, track_ids[i])
+          display_str = (f'ID {track_ids[i]}' if not display_str else
+                         f'{display_str}: ID {track_ids[i]}')
         box_to_display_str_map[box].append(display_str)
         if agnostic_mode:
           box_to_color_map[box] = 'DarkOrange'
@@ -1111,7 +1107,7 @@ class EvalMetricOpsVisualization(six.with_metaclass(abc.ABCMeta, object)):
                                  [tf.uint8] * self._max_examples_to_draw)
     eval_metric_ops = {}
     for i, image in enumerate(image_tensors):
-      summary_name = self._summary_name_prefix + '/' + str(i)
+      summary_name = f'{self._summary_name_prefix}/{str(i)}'
       value_op = image_summary_or_default_string(summary_name, image)
       eval_metric_ops[summary_name] = (value_op, update_op)
     return eval_metric_ops

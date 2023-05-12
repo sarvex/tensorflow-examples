@@ -29,8 +29,7 @@ def setup_tf_behavior(tf_version=_DEFAULT_TF_BEHAVIOR):
   """Setup tf behavior. It must be used before the main()."""
   global _tf_behavior_version
   if tf_version not in [1, 2]:
-    raise ValueError(
-        'tf_version should be in [1, 2], but got {}'.format(tf_version))
+    raise ValueError(f'tf_version should be in [1, 2], but got {tf_version}')
 
   if tf_version == 1:
     tf.compat.v1.logging.warn(

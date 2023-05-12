@@ -190,8 +190,8 @@ def main(_):
   # Validate the output model file by reading the metadata and produce
   # a json file with the metadata under the export path
   displayer = _metadata.MetadataDisplayer.with_model_file(export_model_path)
-  export_json_file = os.path.join(FLAGS.export_directory,
-                                  os.path.splitext(model_basename)[0] + ".json")
+  export_json_file = os.path.join(
+      FLAGS.export_directory, f"{os.path.splitext(model_basename)[0]}.json")
   json_file = displayer.get_metadata_json()
   with open(export_json_file, "w") as f:
     f.write(json_file)

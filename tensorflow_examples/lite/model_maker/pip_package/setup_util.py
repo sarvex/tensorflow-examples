@@ -153,7 +153,7 @@ class PackageGen:
       real_ns = api_util.as_package(
           api_util.split_name(self.lib_ns) + api_util.split_name(ns))
       doc = api_util.generate_package_doc(real_ns)
-      content = 'from {} import *'.format(real_ns)
+      content = f'from {real_ns} import *'
       api_util.make_dirs_or_not(official_py.parent)
       api_util.write_python_file(official_py, doc, [content])
 
@@ -163,7 +163,7 @@ class PackageGen:
     if self.nightly:
       # For nightly, proceeed with addtional preparation.
       extra_package_data = self._prepare_nightly()
-      package_data.update(extra_package_data)
+      package_data |= extra_package_data
 
     # Return package.
     namespace_packages = find_namespace_packages(where=self.build_dir)
@@ -193,7 +193,7 @@ class PackageGen:
     if tfjs_path.exists():
       shutil.rmtree(str(tfjs_path), ignore_errors=True)
     cmd = ['git', 'clone', tfjs_git, str(tfjs_path)]
-    print('Running git clone: {}'.format(cmd))
+    print(f'Running git clone: {cmd}')
     subprocess.check_call(cmd)
 
     # Copy `tensorflowjs` python code, and release with tflite-model-maker
@@ -203,6 +203,8 @@ class PackageGen:
     shutil.copytree(
         src_folder,
         dst_folder,
-        ignore=lambda _, names: set(s for s in names if s.endswith('_test.py')))
+        ignore=lambda _, names: {s
+                                 for s in names if s.endswith('_test.py')},
+    )
 
     return {'tensorflowjs/op_list': ['*.json']}

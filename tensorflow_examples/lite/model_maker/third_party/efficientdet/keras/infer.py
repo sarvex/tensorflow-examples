@@ -96,9 +96,9 @@ def main(_):
         label_map=config.label_map,
         min_score_thresh=config.nms_configs.score_thresh,
         max_boxes_to_draw=config.nms_configs.max_output_size)
-    output_image_path = os.path.join(FLAGS.output_dir, str(i) + '.jpg')
+    output_image_path = os.path.join(FLAGS.output_dir, f'{str(i)}.jpg')
     Image.fromarray(img).save(output_image_path)
-    print('writing annotated image to %s' % output_image_path)
+    print(f'writing annotated image to {output_image_path}')
 
 
 if __name__ == '__main__':

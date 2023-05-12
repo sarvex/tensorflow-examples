@@ -51,7 +51,7 @@ def activation_fn(features: tf.Tensor, act_type: Text):
   elif act_type == 'srelu':
     return srelu_fn(features)
   else:
-    raise ValueError('Unsupported act_type {}'.format(act_type))
+    raise ValueError(f'Unsupported act_type {act_type}')
 
 
 def cross_replica_mean(t, num_shards_per_group=None):
@@ -100,7 +100,7 @@ def get_ckpt_var_map(ckpt_path, ckpt_scope, var_scope, skip_mismatch=None):
   Returns:
     var_map: a dictionary from checkpoint name to model variables.
   """
-  logging.info('Init model from checkpoint {}'.format(ckpt_path))
+  logging.info(f'Init model from checkpoint {ckpt_path}')
   if not ckpt_scope.endswith('/') or not var_scope.endswith('/'):
     raise ValueError('Please specific scope name ending with /')
   if ckpt_scope.startswith('/'):
@@ -128,8 +128,7 @@ def get_ckpt_var_map(ckpt_path, ckpt_scope, var_scope, skip_mismatch=None):
       var_op_name = ''.join(var_op_name.rsplit(f'/replica_{replica_id}', 1))
 
     if not var_op_name.startswith(var_scope):
-      logging.info('skip {} -- does not match scope {}'.format(
-          var_op_name, var_scope))
+      logging.info(f'skip {var_op_name} -- does not match scope {var_scope}')
     ckpt_var = ckpt_scope + var_op_name[len(var_scope):]
     if 'global_step' in ckpt_var:
       continue
@@ -143,22 +142,23 @@ def get_ckpt_var_map(ckpt_path, ckpt_scope, var_scope, skip_mismatch=None):
         # Skip optimizer variables.
         continue
       if skip_mismatch:
-        logging.info('skip {} ({}) -- not in ckpt'.format(
-            var_op_name, ckpt_var))
+        logging.info(f'skip {var_op_name} ({ckpt_var}) -- not in ckpt')
         continue
-      raise ValueError('{} is not in ckpt {}'.format(v.op, ckpt_path))
+      raise ValueError(f'{v.op} is not in ckpt {ckpt_path}')
 
     if v.shape != ckpt_var_name_to_shape[ckpt_var]:
       if skip_mismatch:
-        logging.info('skip {} ({} vs {}) -- shape mismatch'.format(
-            var_op_name, v.shape, ckpt_var_name_to_shape[ckpt_var]))
+        logging.info(
+            f'skip {var_op_name} ({v.shape} vs {ckpt_var_name_to_shape[ckpt_var]}) -- shape mismatch'
+        )
         continue
-      raise ValueError('shape mismatch {} ({} vs {})'.format(
-          var_op_name, v.shape, ckpt_var_name_to_shape[ckpt_var]))
+      raise ValueError(
+          f'shape mismatch {var_op_name} ({v.shape} vs {ckpt_var_name_to_shape[ckpt_var]})'
+      )
 
     if i < 5:
       # Log the first few elements for sanity check.
-      logging.info('Init {} from ckpt var {}'.format(var_op_name, ckpt_var))
+      logging.info(f'Init {var_op_name} from ckpt var {ckpt_var}')
     var_map[ckpt_var] = v
 
   return var_map
@@ -181,19 +181,19 @@ class TpuBatchNormalization(tf.keras.layers.BatchNormalization):
 
     num_shards = tpu_function.get_tpu_context().number_of_shards or 1
     num_shards_per_group = min(32, num_shards)  # aggregate up to 32 cores.
-    logging.info('TpuBatchNormalization with num_shards_per_group {}'.format(
-        num_shards_per_group))
-    if num_shards_per_group > 1:
-      # Compute variance using: Var[X]= E[X^2] - E[X]^2.
-      shard_square_of_mean = tf.math.square(shard_mean)
-      shard_mean_of_square = shard_variance + shard_square_of_mean
-      group_mean = cross_replica_mean(shard_mean, num_shards_per_group)
-      group_mean_of_square = cross_replica_mean(shard_mean_of_square,
-                                                num_shards_per_group)
-      group_variance = group_mean_of_square - tf.math.square(group_mean)
-      return (group_mean, group_variance)
-    else:
+    logging.info(
+        f'TpuBatchNormalization with num_shards_per_group {num_shards_per_group}'
+    )
+    if num_shards_per_group <= 1:
       return (shard_mean, shard_variance)
+    # Compute variance using: Var[X]= E[X^2] - E[X]^2.
+    shard_square_of_mean = tf.math.square(shard_mean)
+    shard_mean_of_square = shard_variance + shard_square_of_mean
+    group_mean = cross_replica_mean(shard_mean, num_shards_per_group)
+    group_mean_of_square = cross_replica_mean(shard_mean_of_square,
+                                              num_shards_per_group)
+    group_variance = group_mean_of_square - tf.math.square(group_mean)
+    return (group_mean, group_variance)
 
   def call(self, inputs, training=None):
     outputs = super().call(inputs, training)
@@ -221,18 +221,17 @@ class SyncBatchNormalization(tf.keras.layers.BatchNormalization):
     replica_context = tf.distribute.get_replica_context()
     num_shards = replica_context.num_replicas_in_sync or 1
 
-    if num_shards > 1:
-      # Compute variance using: Var[X]= E[X^2] - E[X]^2.
-      shard_square_of_mean = tf.math.square(shard_mean)
-      shard_mean_of_square = shard_variance + shard_square_of_mean
-      group_mean = replica_context.all_reduce(
-          tf.distribute.ReduceOp.MEAN, shard_mean)
-      group_mean_of_square = replica_context.all_reduce(
-          tf.distribute.ReduceOp.MEAN, shard_mean_of_square)
-      group_variance = group_mean_of_square - tf.math.square(group_mean)
-      return (group_mean, group_variance)
-    else:
+    if num_shards <= 1:
       return (shard_mean, shard_variance)
+    # Compute variance using: Var[X]= E[X^2] - E[X]^2.
+    shard_square_of_mean = tf.math.square(shard_mean)
+    shard_mean_of_square = shard_variance + shard_square_of_mean
+    group_mean = replica_context.all_reduce(
+        tf.distribute.ReduceOp.MEAN, shard_mean)
+    group_mean_of_square = replica_context.all_reduce(
+        tf.distribute.ReduceOp.MEAN, shard_mean_of_square)
+    group_variance = group_mean_of_square - tf.math.square(group_mean)
+    return (group_mean, group_variance)
 
   def call(self, inputs, training=None):
     outputs = super().call(inputs, training)
@@ -308,11 +307,7 @@ def batch_norm_act(inputs,
   else:
     gamma_initializer = tf.ones_initializer()
 
-  if data_format == 'channels_first':
-    axis = 1
-  else:
-    axis = 3
-
+  axis = 1 if data_format == 'channels_first' else 3
   inputs = batch_normalization(
       inputs=inputs,
       axis=axis,
@@ -342,11 +337,7 @@ def drop_connect(inputs, is_training, survival_prob):
   random_tensor = survival_prob
   random_tensor += tf.random.uniform([batch_size, 1, 1, 1], dtype=inputs.dtype)
   binary_tensor = tf.floor(random_tensor)
-  # Unlike conventional way that multiply survival_prob at test time, here we
-  # divide survival_prob at training time, such that no addition compute is
-  # needed at test time.
-  output = inputs / survival_prob * binary_tensor
-  return output
+  return inputs / survival_prob * binary_tensor
 
 
 def num_params_flops(readable_format=True):
@@ -380,7 +371,7 @@ class Pair(tuple):
 
 def scalar(name, tensor, is_tpu=True):
   """Stores a (name, Tensor) tuple in a custom collection."""
-  logging.info('Adding scale summary {}'.format(Pair(name, tensor)))
+  logging.info(f'Adding scale summary {Pair(name, tensor)}')
   if is_tpu:
     tf.add_to_collection('scalar_summaries', Pair(name, tf.reduce_mean(tensor)))
   else:
@@ -388,7 +379,7 @@ def scalar(name, tensor, is_tpu=True):
 
 
 def image(name, tensor, is_tpu=True):
-  logging.info('Adding image summary {}'.format(Pair(name, tensor)))
+  logging.info(f'Adding image summary {Pair(name, tensor)}')
   if is_tpu:
     tf.add_to_collection('image_summaries', Pair(name, tensor))
   else:
@@ -446,13 +437,12 @@ def archive_ckpt(ckpt_eval, ckpt_objective, ckpt_path):
     with tf.io.gfile.GFile(saved_objective_path, 'r') as f:
       saved_objective = float(f.read())
   if saved_objective > ckpt_objective:
-    logging.info('Ckpt {} is worse than {}'.format(ckpt_objective,
-                                                   saved_objective))
+    logging.info(f'Ckpt {ckpt_objective} is worse than {saved_objective}')
     return False
 
-  filenames = tf.io.gfile.glob(ckpt_path + '.*')
+  filenames = tf.io.gfile.glob(f'{ckpt_path}.*')
   if filenames is None:
-    logging.info('No files to copy for checkpoint {}'.format(ckpt_path))
+    logging.info(f'No files to copy for checkpoint {ckpt_path}')
     return False
 
   # clear up the backup folder.
@@ -463,7 +453,7 @@ def archive_ckpt(ckpt_eval, ckpt_objective, ckpt_path):
   # rename the old checkpoints to backup folder.
   dst_dir = os.path.join(ckpt_dir, 'archive')
   if tf.io.gfile.exists(dst_dir):
-    logging.info('mv {} to {}'.format(dst_dir, backup_dir))
+    logging.info(f'mv {dst_dir} to {backup_dir}')
     tf.io.gfile.rename(dst_dir, backup_dir)
 
   # Write checkpoints.
@@ -476,13 +466,13 @@ def archive_ckpt(ckpt_eval, ckpt_objective, ckpt_path):
   with tf.io.gfile.GFile(os.path.join(dst_dir, 'checkpoint'), 'w') as f:
     f.write(str(ckpt_state))
   with tf.io.gfile.GFile(os.path.join(dst_dir, 'best_eval.txt'), 'w') as f:
-    f.write('%s' % ckpt_eval)
+    f.write(f'{ckpt_eval}')
 
   # Update the best objective.
   with tf.io.gfile.GFile(saved_objective_path, 'w') as f:
     f.write('%f' % ckpt_objective)
 
-  logging.info('Copying checkpoint {} to {}'.format(ckpt_path, dst_dir))
+  logging.info(f'Copying checkpoint {ckpt_path} to {dst_dir}')
   return True
 
 
@@ -542,16 +532,12 @@ def verify_feats_size(feats,
     h_id, w_id = (2, 3) if data_format == 'channels_first' else (1, 2)
     if feats[cnt].shape[h_id] != size['height']:
       raise ValueError(
-          'feats[{}] has shape {} but its height should be {}.'
-          '(input_height: {}, min_level: {}, max_level: {}.)'.format(
-              cnt, feats[cnt].shape, size['height'], feat_sizes[0]['height'],
-              min_level, max_level))
+          f"feats[{cnt}] has shape {feats[cnt].shape} but its height should be {size['height']}.(input_height: {feat_sizes[0]['height']}, min_level: {min_level}, max_level: {max_level}.)"
+      )
     if feats[cnt].shape[w_id] != size['width']:
       raise ValueError(
-          'feats[{}] has shape {} but its width should be {}.'
-          '(input_width: {}, min_level: {}, max_level: {}.)'.format(
-              cnt, feats[cnt].shape, size['width'], feat_sizes[0]['width'],
-              min_level, max_level))
+          f"feats[{cnt}] has shape {feats[cnt].shape} but its width should be {size['width']}.(input_width: {feat_sizes[0]['width']}, min_level: {min_level}, max_level: {max_level}.)"
+      )
 
 
 def get_precision(strategy: str, mixed_precision: bool = False):
@@ -641,7 +627,7 @@ def build_model_with_precision(pp, mm, ii, *args, **kwargs):
     set_precision_policy(pp)
     outputs = mm(ii, *args, **kwargs)
   else:
-    raise ValueError('Unknow precision name {}'.format(pp))
+    raise ValueError(f'Unknow precision name {pp}')
 
   # Users are responsible to convert the dtype of all outputs.
   return outputs
@@ -722,8 +708,6 @@ def recompute_grad(recompute=False):
   """Decorator determine whether use gradient checkpoint."""
 
   def _wrapper(f):
-    if recompute:
-      return _recompute_grad(f)
-    return f
+    return _recompute_grad(f) if recompute else f
 
   return _wrapper

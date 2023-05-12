@@ -14,6 +14,7 @@
 # ==============================================================================
 """tensorflow_examples is a package of tensorflow example code."""
 
+
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -37,7 +38,7 @@ version = subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode('utf-8')
 if nightly:
   project_name = 'tensorflow-examples-nightly'
   datestring = datetime.datetime.now().strftime('%Y%m%d%H%M')
-  version = '%s-dev%s' % (version, datestring)
+  version = f'{version}-dev{datestring}'
 
 DOCLINES = __doc__.split('\n')
 
@@ -50,10 +51,7 @@ TESTS_REQUIRE = [
     'jupyter',
 ]
 
-if sys.version_info.major == 3:
-  # Packages only for Python 3
-  pass
-else:
+if sys.version_info.major != 3:
   # Packages only for Python 2
   TESTS_REQUIRE.append('mock')
   REQUIRED_PKGS.append('futures')  # concurrent.futures

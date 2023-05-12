@@ -52,10 +52,7 @@ class Train(object):
   def decay(self, epoch):
     if epoch < 150:
       return 0.1
-    if epoch >= 150 and epoch < 225:
-      return 0.01
-    if epoch >= 225:
-      return 0.001
+    return 0.01 if epoch < 225 else 0.001
 
   def keras_fit(self, train_dataset, test_dataset):
     self.model.compile(

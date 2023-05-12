@@ -100,9 +100,7 @@ def _create_ground_truth_csv(input_images, ground_truth_csv_path):
   # Create column name for CSV file
   column_names = []
   for body_part in BodyPart:
-    column_names.append(body_part.name + '_x')
-    column_names.append(body_part.name + '_y')
-
+    column_names.extend((body_part.name + '_x', body_part.name + '_y'))
   # Create ground truth data by feeding the test images through MoveNet
   # Thunder 3 times to leverage the cropping logic and improve accuracy.
   keypoints_data = []

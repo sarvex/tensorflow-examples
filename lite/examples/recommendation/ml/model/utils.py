@@ -45,7 +45,7 @@ def GetShardFilenames(filepattern):
   filenames = tf.io.gfile.glob(filepattern)
   for filename in filenames:
     if not tf.io.gfile.exists(filename):
-      raise ValueError('File not found: %s' % filename)
+      raise ValueError(f'File not found: {filename}')
   return filenames
 
 
@@ -78,6 +78,8 @@ def ClipGradient(
     with tf.name_scope('Gradient_info_clip'):
       for g, v in clipped_grads_and_vars:
         if not isinstance(g, tf.IndexedSlices):
-          tf.summary.scalar('%s_clip_l2_norm' % v.name.replace(':', '_'),
-                            tf.sqrt(tf.reduce_sum(tf.square(g))))
+          tf.summary.scalar(
+              f"{v.name.replace(':', '_')}_clip_l2_norm",
+              tf.sqrt(tf.reduce_sum(tf.square(g))),
+          )
   return clipped_grads_and_vars

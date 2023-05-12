@@ -157,6 +157,5 @@ class PlaneStrikePyEnvironment(py_environment.PyEnvironment):
   def render(self, mode: "human") -> np.ndarray:
     if mode != "human":
       raise ValueError(
-          "Only rendering mode supported is 'human', got {} instead.".format(
-              mode))
+          f"Only rendering mode supported is 'human', got {mode} instead.")
     return self._visible_board

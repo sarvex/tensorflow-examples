@@ -58,10 +58,10 @@ class ContextEncoderTest(tf.test.TestCase):
         vocab_size=3952,
         embedding_dim=4)
 
-    input_config = input_config_pb2.InputConfig(
+    return input_config_pb2.InputConfig(
         activity_feature_groups=[feature_group_1, feature_group_2],
-        label_feature=feature_label)
-    return input_config
+        label_feature=feature_label,
+    )
 
   def _create_test_model_config(self):
     return model_config_class.ModelConfig(

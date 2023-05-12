@@ -208,10 +208,10 @@ class RecommendationModelLauncherTest(tf.test.TestCase):
     }
     input_details = interpreter.get_input_details()
     output_details = interpreter.get_output_details()
-    indice_to_tensors = {}
-    for input_detail in input_details:
-      indice_to_tensors[input_detail['index']] = serving_name_to_tenors[
-          input_detail['name']]
+    indice_to_tensors = {
+        input_detail['index']: serving_name_to_tenors[input_detail['name']]
+        for input_detail in input_details
+    }
     for index, tensor in indice_to_tensors.items():
       interpreter.set_tensor(index, tensor)
     interpreter.invoke()

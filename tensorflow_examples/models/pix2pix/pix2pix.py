@@ -365,9 +365,7 @@ def discriminator(norm_type='batchnorm', target=True):
 
 def get_checkpoint_prefix():
   checkpoint_dir = './training_checkpoints'
-  checkpoint_prefix = os.path.join(checkpoint_dir, 'ckpt')
-
-  return checkpoint_prefix
+  return os.path.join(checkpoint_dir, 'ckpt')
 
 
 class Pix2pix(object):
@@ -402,9 +400,7 @@ class Pix2pix(object):
     generated_loss = self.loss_object(tf.zeros_like(
         disc_generated_output), disc_generated_output)
 
-    total_disc_loss = real_loss + generated_loss
-
-    return total_disc_loss
+    return real_loss + generated_loss
 
   def generator_loss(self, disc_generated_output, gen_output, target):
     gan_loss = self.loss_object(tf.ones_like(
@@ -412,8 +408,7 @@ class Pix2pix(object):
 
     # mean absolute error
     l1_loss = tf.reduce_mean(tf.abs(target - gen_output))
-    total_gen_loss = gan_loss + (self.lambda_value * l1_loss)
-    return total_gen_loss
+    return gan_loss + (self.lambda_value * l1_loss)
 
   def train_step(self, input_image, target_image):
     """One train step over the generator and discriminator model.

@@ -31,9 +31,7 @@ def vectorized_iou(clusters, detection):
   boxa_area = (x12 - x11) * (y12 - y11)
   boxb_area = (x22 - x21) * (y22 - y21)
 
-  iou = inter_area / (boxa_area + boxb_area - inter_area)
-
-  return iou
+  return inter_area / (boxa_area + boxb_area - inter_area)
 
 
 def find_matching_cluster(clusters, detection):
@@ -42,10 +40,7 @@ def find_matching_cluster(clusters, detection):
     return -1
   ious = vectorized_iou(tf.stack(clusters), detection)
   ious = tf.reshape(ious, [len(clusters)])
-  if tf.math.reduce_max(ious) < 0.55:
-    # returns -1 if no iou is higher than 0.55.
-    return -1
-  return tf.argmax(ious)
+  return -1 if tf.math.reduce_max(ious) < 0.55 else tf.argmax(ious)
 
 
 def weighted_average(samples, weights):

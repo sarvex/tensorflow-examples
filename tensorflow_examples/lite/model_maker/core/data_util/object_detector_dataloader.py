@@ -37,10 +37,7 @@ CsvLines = Tuple[List[List[List[str]]], Dict[int, str]]
 def _get_label_map(label_map):
   """Gets the label map dict."""
   if isinstance(label_map, list):
-    label_map_dict = {}
-    for i, label in enumerate(label_map):
-      # 0 is resevered for background.
-      label_map_dict[i + 1] = label
+    label_map_dict = {i + 1: label for i, label in enumerate(label_map)}
     label_map = label_map_dict
   label_map = label_util.get_label_map(label_map)
 
@@ -316,7 +313,7 @@ class DataLoader(dataloader.DataLoader):
       ObjectDetectorDataLoader object.
     """
     # Gets TFRecord files.
-    tfrecord_file_patten = cache_prefix + '*.tfrecord'
+    tfrecord_file_patten = f'{cache_prefix}*.tfrecord'
     if not tf.io.gfile.glob(tfrecord_file_patten):
       raise ValueError('TFRecord files are empty.')
 

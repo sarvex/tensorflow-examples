@@ -57,25 +57,34 @@ def make_generator_model():
   Returns:
     Keras Sequential model
   """
-  model = tf.keras.Sequential([
-      tf.keras.layers.Dense(7*7*256, use_bias=False),
+  return tf.keras.Sequential([
+      tf.keras.layers.Dense(7 * 7 * 256, use_bias=False),
       tf.keras.layers.BatchNormalization(),
       tf.keras.layers.LeakyReLU(),
       tf.keras.layers.Reshape((7, 7, 256)),
-      tf.keras.layers.Conv2DTranspose(128, 5, strides=(1, 1),
-                                      padding='same', use_bias=False),
+      tf.keras.layers.Conv2DTranspose(128,
+                                      5,
+                                      strides=(1, 1),
+                                      padding='same',
+                                      use_bias=False),
       tf.keras.layers.BatchNormalization(),
       tf.keras.layers.LeakyReLU(),
-      tf.keras.layers.Conv2DTranspose(64, 5, strides=(2, 2),
-                                      padding='same', use_bias=False),
+      tf.keras.layers.Conv2DTranspose(64,
+                                      5,
+                                      strides=(2, 2),
+                                      padding='same',
+                                      use_bias=False),
       tf.keras.layers.BatchNormalization(),
       tf.keras.layers.LeakyReLU(),
-      tf.keras.layers.Conv2DTranspose(1, 5, strides=(2, 2),
-                                      padding='same', use_bias=False,
-                                      activation='tanh')
+      tf.keras.layers.Conv2DTranspose(
+          1,
+          5,
+          strides=(2, 2),
+          padding='same',
+          use_bias=False,
+          activation='tanh',
+      ),
   ])
-
-  return model
 
 
 def make_discriminator_model():
@@ -84,7 +93,7 @@ def make_discriminator_model():
   Returns:
     Keras Sequential model
   """
-  model = tf.keras.Sequential([
+  return tf.keras.Sequential([
       tf.keras.layers.Conv2D(64, 5, strides=(2, 2), padding='same'),
       tf.keras.layers.LeakyReLU(),
       tf.keras.layers.Dropout(0.3),
@@ -92,17 +101,13 @@ def make_discriminator_model():
       tf.keras.layers.LeakyReLU(),
       tf.keras.layers.Dropout(0.3),
       tf.keras.layers.Flatten(),
-      tf.keras.layers.Dense(1)
+      tf.keras.layers.Dense(1),
   ])
-
-  return model
 
 
 def get_checkpoint_prefix():
   checkpoint_dir = './training_checkpoints'
-  checkpoint_prefix = os.path.join(checkpoint_dir, 'ckpt')
-
-  return checkpoint_prefix
+  return os.path.join(checkpoint_dir, 'ckpt')
 
 
 class Dcgan(object):
@@ -138,9 +143,7 @@ class Dcgan(object):
     generated_loss = self.loss_object(
         tf.zeros_like(generated_output), generated_output)
 
-    total_loss = real_loss + generated_loss
-
-    return total_loss
+    return real_loss + generated_loss
 
   def train_step(self, image):
     """One train step over the generator and discriminator model.

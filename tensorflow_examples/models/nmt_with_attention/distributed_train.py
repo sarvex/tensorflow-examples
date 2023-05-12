@@ -128,9 +128,9 @@ def main(epochs, enable_function, buffer_size, batch_size, download_path,
 
     local_batch_size, remainder = divmod(batch_size, num_replicas)
 
-    template = ('Batch size ({}) must be divisible by the '
-                'number of replicas ({})')
     if remainder:
+      template = ('Batch size ({}) must be divisible by the '
+                  'number of replicas ({})')
       raise ValueError(template.format(batch_size, num_replicas))
 
     encoder = nmt.Encoder(vocab_inp_size, embedding_dim, enc_units,

@@ -39,7 +39,7 @@ def get_int2label(wanted_only=False, extend_reversed=False):
   classes = get_classes(
       wanted_only=wanted_only, extend_reversed=extend_reversed)
   classes = prepare_words_list(classes)
-  int2label = {i: l for i, l in enumerate(classes)}
+  int2label = dict(enumerate(classes))
   int2label = OrderedDict(sorted(int2label.items(), key=lambda x: x[0]))
   return int2label
 

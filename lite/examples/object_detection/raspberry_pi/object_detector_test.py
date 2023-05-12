@@ -141,12 +141,7 @@ class ObjectDetectorTest(unittest.TestCase):
     rect1_area = (rect1.right - rect1.left) * (rect1.bottom - rect1.top)
     rect2_area = (rect2.right - rect2.left) * (rect2.bottom - rect2.top)
 
-    # Compute the intersection over union by taking the intersection
-    # area and dividing it by the sum of prediction + ground-truth
-    # areas - the intersection area
-    iou = inter_area / float(rect1_area + rect2_area - inter_area)
-
-    return iou
+    return inter_area / float(rect1_area + rect2_area - inter_area)
 
 # pylint: disable=g-unreachable-test-method
 

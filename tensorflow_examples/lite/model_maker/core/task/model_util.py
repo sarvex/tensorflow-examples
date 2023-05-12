@@ -58,12 +58,11 @@ def get_steps_per_epoch(steps_per_epoch=None, batch_size=None, train_data=None):
   if steps_per_epoch is not None:
     # steps_per_epoch is set by users manually.
     return steps_per_epoch
-  else:
-    # Gets the steps by the length of the training data.
-    try:
-      return len(train_data) // batch_size
-    except TypeError:
-      return None
+  # Gets the steps by the length of the training data.
+  try:
+    return len(train_data) // batch_size
+  except TypeError:
+    return None
 
 
 def _create_temp_dir(convert_from_saved_model):
@@ -140,11 +139,7 @@ def export_tflite(model,
     raise ValueError(
         "TFLite filepath couldn't be None when exporting to tflite.")
 
-  if compat.get_tf_behavior() == 1:
-    lite = tf.compat.v1.lite
-  else:
-    lite = tf.lite
-
+  lite = tf.compat.v1.lite if compat.get_tf_behavior() == 1 else tf.lite
   convert_from_saved_model = (
       compat.get_tf_behavior() == 1 or convert_from_saved_model_tf2)
   with _create_temp_dir(convert_from_saved_model) as temp_dir_name:
@@ -180,23 +175,21 @@ def get_lite_runner(tflite_filepath, model_spec=None):
   if hasattr(model_spec, 'reorder_output_details'):
     reorder_output_details_fn = model_spec.reorder_output_details
 
-  lite_runner = LiteRunner(tflite_filepath, reorder_input_details_fn,
-                           reorder_output_details_fn)
-  return lite_runner
+  return LiteRunner(tflite_filepath, reorder_input_details_fn,
+                    reorder_output_details_fn)
 
 
 def _get_input_tensor(input_tensors, input_details, i):
   """Gets input tensor in `input_tensors` that maps `input_detail[i]`."""
-  if isinstance(input_tensors, dict):
-    # Gets the mapped input tensor.
-    input_detail = input_details[i]
-    for input_tensor_name, input_tensor in input_tensors.items():
-      if input_tensor_name in input_detail['name']:
-        return input_tensor
-    raise ValueError('Input tensors don\'t contains a tensor that mapped the '
-                     'input detail %s' % str(input_detail))
-  else:
+  if not isinstance(input_tensors, dict):
     return input_tensors[i]
+  # Gets the mapped input tensor.
+  input_detail = input_details[i]
+  for input_tensor_name, input_tensor in input_tensors.items():
+    if input_tensor_name in input_detail['name']:
+      return input_tensor
+  raise ValueError('Input tensors don\'t contains a tensor that mapped the '
+                   'input detail %s' % str(input_detail))
 
 
 class LiteRunner(object):
@@ -243,8 +236,8 @@ class LiteRunner(object):
     """
 
     if not isinstance(input_tensors, list) and \
-       not isinstance(input_tensors, tuple) and \
-       not isinstance(input_tensors, dict):
+         not isinstance(input_tensors, tuple) and \
+         not isinstance(input_tensors, dict):
       input_tensors = [input_tensors]
 
     interpreter = self.interpreter
@@ -277,9 +270,7 @@ class LiteRunner(object):
         output_tensor = (output_tensor - zero_point) * scale
       output_tensors.append(output_tensor)
 
-    if len(output_tensors) == 1:
-      return output_tensors[0]
-    return output_tensors
+    return output_tensors[0] if len(output_tensors) == 1 else output_tensors
 
 
 def export_tfjs(keras_or_saved_model,

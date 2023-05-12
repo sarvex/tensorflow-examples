@@ -104,19 +104,18 @@ class DataLoader(object):
       preprocess = functools.partial(preprocess, is_training=is_training)
       ds = ds.map(preprocess, num_parallel_calls=tf.data.AUTOTUNE)
 
-    if is_training:
-      if shuffle:
-        # Shuffle size should be bigger than the batch_size. Otherwise it's only
-        # shuffling within the batch, which equals to not having shuffle.
-        buffer_size = 3 * batch_size
-        # But since we are doing shuffle before repeat, it doesn't make sense to
-        # shuffle more than total available entries.
-        # TODO(wangtz): Do we want to do shuffle before / after repeat?
-        # Shuffle after repeat will give a more randomized dataset and mix the
-        # epoch boundary: https://www.tensorflow.org/guide/data
-        if self._size:
-          buffer_size = min(self._size, buffer_size)
-        ds = ds.shuffle(buffer_size=buffer_size)
+    if is_training and shuffle:
+      # Shuffle size should be bigger than the batch_size. Otherwise it's only
+      # shuffling within the batch, which equals to not having shuffle.
+      buffer_size = 3 * batch_size
+      # But since we are doing shuffle before repeat, it doesn't make sense to
+      # shuffle more than total available entries.
+      # TODO(wangtz): Do we want to do shuffle before / after repeat?
+      # Shuffle after repeat will give a more randomized dataset and mix the
+      # epoch boundary: https://www.tensorflow.org/guide/data
+      if self._size:
+        buffer_size = min(self._size, buffer_size)
+      ds = ds.shuffle(buffer_size=buffer_size)
 
     ds = ds.batch(batch_size, drop_remainder=drop_remainder)
     ds = ds.prefetch(tf.data.AUTOTUNE)
@@ -124,10 +123,7 @@ class DataLoader(object):
     return ds
 
   def __len__(self):
-    if self._size is not None:
-      return self._size
-    else:
-      return len(self._dataset)
+    return self._size if self._size is not None else len(self._dataset)
 
   def split(self, fraction):
     """Splits dataset into two sub-datasets with the given fraction.

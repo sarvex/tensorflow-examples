@@ -223,8 +223,7 @@ class ObjectDetector:
   def _get_output_tensor(self, name):
     """Returns the output tensor at the given index."""
     output_index = self._output_indices[name]
-    tensor = np.squeeze(self._interpreter.get_tensor(output_index))
-    return tensor
+    return np.squeeze(self._interpreter.get_tensor(output_index))
 
   def _postprocess(self, boxes: np.ndarray, classes: np.ndarray,
                    scores: np.ndarray, count: int, image_width: int,

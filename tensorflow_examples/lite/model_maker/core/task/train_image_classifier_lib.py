@@ -73,8 +73,7 @@ def get_default_hparams():
       warmup_steps=None,
       model_dir=tempfile.mkdtemp(),
   )
-  default_hparams = HParams(**as_dict)
-  return default_hparams
+  return HParams(**as_dict)
 
 
 def create_optimizer(init_lr, num_decay_steps, num_warmup_steps):
@@ -87,10 +86,10 @@ def create_optimizer(init_lr, num_decay_steps, num_warmup_steps):
         initial_learning_rate=init_lr,
         decay_schedule_fn=learning_rate_fn,
         warmup_steps=num_warmup_steps)
-  optimizer = tf.keras.optimizers.RMSprop(
-      learning_rate=learning_rate_fn, rho=0.9, momentum=0.9, epsilon=0.001)
-
-  return optimizer
+  return tf.keras.optimizers.RMSprop(learning_rate=learning_rate_fn,
+                                     rho=0.9,
+                                     momentum=0.9,
+                                     epsilon=0.001)
 
 
 def get_default_callbacks(model_dir):

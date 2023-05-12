@@ -327,12 +327,12 @@ class ServingDriver:
         # pre_ & post_ modes.
         export_model = ExportModel(
             self.model, pre_mode=None, post_mode='tflite')
-      return export_model, spec
     else:
       spec = tf.TensorSpec(
           shape=[self.batch_size, None, None, 3], dtype=tf.uint8, name='images')
       export_model = ExportModel(self.model)
-      return export_model, spec
+
+    return export_model, spec
 
   def export(self,
              output_dir: Optional[Text] = None,
@@ -362,8 +362,10 @@ class ServingDriver:
       # also save freeze pb file.
       graphdef = self.freeze(
           export_model.__call__.get_concrete_function(input_spec))
-      proto_path = tf.io.write_graph(
-          graphdef, output_dir, self.model_name + '_frozen.pb', as_text=False)
+      proto_path = tf.io.write_graph(graphdef,
+                                     output_dir,
+                                     f'{self.model_name}_frozen.pb',
+                                     as_text=False)
       logging.info('Frozen graph saved at %s', proto_path)
 
     if tflite:
@@ -413,13 +415,13 @@ class ServingDriver:
       else:
         raise ValueError(f'Invalid tflite {tflite}: must be FP32, FP16, INT8.')
 
-      tflite_path = os.path.join(output_dir, tflite.lower() + '.tflite')
+      tflite_path = os.path.join(output_dir, f'{tflite.lower()}.tflite')
       tflite_model = converter.convert()
       tf.io.gfile.GFile(tflite_path, 'wb').write(tflite_model)
       logging.info('TFLite is saved at %s', tflite_path)
 
     if tensorrt:
-      trt_path = os.path.join(output_dir, 'tensorrt_' + tensorrt.lower())
+      trt_path = os.path.join(output_dir, f'tensorrt_{tensorrt.lower()}')
       conversion_params = tf.experimental.tensorrt.ConversionParams(
           max_workspace_size_bytes=(2 << 20),
           maximum_cached_engines=1,

@@ -99,8 +99,9 @@ class BaseTest(tf.test.TestCase):
     spec.export_tflite(
         model,
         tflite_filepath,
-        index_to_label=['label_{}'.format(i) for i in range(num_classes)],
-        quantization_config=quantization_config)
+        index_to_label=[f'label_{i}' for i in range(num_classes)],
+        quantization_config=quantization_config,
+    )
 
     self.assertNear(
         os.path.getsize(tflite_filepath), expected_model_size, 1000 * 1000)
@@ -125,17 +126,12 @@ class YAMNetSpecTest(BaseTest):
 
     chunks = output_count // input_count
 
-    cnt = 0
-    for item, label in ds:
-      cnt += 1
+    cnt = sum(1 for item, label in ds)
     self.assertEqual(cnt, output_count)
 
-    # More thorough checks.
-    cnt = 0
-    for item, label in ds:
+    for cnt, (item, label) in enumerate(ds):
       self.assertEqual(output_shape, item.shape)
       self.assertEqual(label, cnt // chunks)
-      cnt += 1
 
   def test_preprocess(self):
     # No padding on the input.

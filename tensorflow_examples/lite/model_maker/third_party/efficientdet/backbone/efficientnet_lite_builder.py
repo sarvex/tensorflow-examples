@@ -56,7 +56,7 @@ def efficientnet_lite(width_coefficient=None,
                       dropout_rate=0.2,
                       survival_prob=0.8):
   """Creates a efficientnet model."""
-  global_params = efficientnet_model.GlobalParams(
+  return efficientnet_model.GlobalParams(
       blocks_args=_DEFAULT_BLOCKS_ARGS,
       batch_norm_momentum=0.99,
       batch_norm_epsilon=1e-3,
@@ -75,20 +75,19 @@ def efficientnet_lite(width_coefficient=None,
       clip_projection_output=False,
       fix_head_stem=True,  # Don't scale stem and head.
       local_pooling=True,  # special cases for tflite issues.
-      use_se=False)  # SE is not well supported on many lite devices.
-  return global_params
+      use_se=False,
+  )
 
 
 def get_model_params(model_name, override_params):
   """Get the block args and global params for a given model."""
-  if model_name.startswith('efficientnet-lite'):
-    width_coefficient, depth_coefficient, _, dropout_rate = (
-        efficientnet_lite_params(model_name))
-    global_params = efficientnet_lite(
-        width_coefficient, depth_coefficient, dropout_rate)
-  else:
-    raise NotImplementedError('model name is not pre-defined: %s' % model_name)
+  if not model_name.startswith('efficientnet-lite'):
+    raise NotImplementedError(f'model name is not pre-defined: {model_name}')
 
+  width_coefficient, depth_coefficient, _, dropout_rate = (
+      efficientnet_lite_params(model_name))
+  global_params = efficientnet_lite(
+      width_coefficient, depth_coefficient, dropout_rate)
   if override_params:
     # ValueError will be raised here if override_params has fields not included
     # in global_params.

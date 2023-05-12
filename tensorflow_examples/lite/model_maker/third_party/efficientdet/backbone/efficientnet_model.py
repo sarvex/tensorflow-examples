@@ -271,11 +271,12 @@ class MBConvBlock(tf.keras.layers.Layer):
     """Builds block according to the arguments."""
     # pylint: disable=g-long-lambda
     bid = itertools.count(0)
-    get_bn_name = lambda: 'tpu_batch_normalization' + ('' if not next(
-        bid) else '_' + str(next(bid) // 2))
+    get_bn_name = lambda: ('tpu_batch_normalization' +
+                           ('' if not next(bid) else f'_{str(next(bid) // 2)}'))
     cid = itertools.count(0)
-    get_conv_name = lambda: 'conv2d' + ('' if not next(cid) else '_' + str(
-        next(cid) // 2))
+    get_conv_name = lambda: ('conv2d' +
+                             (''
+                              if not next(cid) else f'_{str(next(cid) // 2)}'))
     # pylint: enable=g-long-lambda
 
     if self._block_args.super_pixel == 1:
@@ -403,14 +404,13 @@ class MBConvBlock(tf.keras.layers.Layer):
       x = tf.identity(x)
       if self._clip_projection_output:
         x = tf.clip_by_value(x, -6, 6)
-      if self._block_args.id_skip:
-        if all(
-            s == 1 for s in self._block_args.strides
-        ) and self._block_args.input_filters == self._block_args.output_filters:
-          # Apply only if skip connection presents.
-          if survival_prob:
-            x = utils.drop_connect(x, training, survival_prob)
-          x = tf.add(x, inputs)
+      if (self._block_args.id_skip
+          and all(s == 1 for s in self._block_args.strides)
+          and self._block_args.input_filters == self._block_args.output_filters):
+        # Apply only if skip connection presents.
+        if survival_prob:
+          x = utils.drop_connect(x, training, survival_prob)
+        x = tf.add(x, inputs)
       logging.info('Project shape: %s', x.shape)
       return x
 
@@ -425,8 +425,9 @@ class MBConvBlockWithoutDepthwise(MBConvBlock):
     filters = self._block_args.input_filters * self._block_args.expand_ratio
     # pylint: disable=g-long-lambda
     cid = itertools.count(0)
-    get_conv_name = lambda: 'conv2d' + ('' if not next(cid) else '_' + str(
-        next(cid) // 2))
+    get_conv_name = lambda: ('conv2d' +
+                             (''
+                              if not next(cid) else f'_{str(next(cid) // 2)}'))
     # pylint: enable=g-long-lambda
     kernel_size = self._block_args.kernel_size
     if self._block_args.expand_ratio != 1:
@@ -490,14 +491,13 @@ class MBConvBlockWithoutDepthwise(MBConvBlock):
       if self._clip_projection_output:
         x = tf.clip_by_value(x, -6, 6)
 
-      if self._block_args.id_skip:
-        if all(
-            s == 1 for s in self._block_args.strides
-        ) and self._block_args.input_filters == self._block_args.output_filters:
-          # Apply only if skip connection presents.
-          if survival_prob:
-            x = utils.drop_connect(x, training, survival_prob)
-          x = tf.add(x, inputs)
+      if (self._block_args.id_skip
+          and all(s == 1 for s in self._block_args.strides)
+          and self._block_args.input_filters == self._block_args.output_filters):
+        # Apply only if skip connection presents.
+        if survival_prob:
+          x = utils.drop_connect(x, training, survival_prob)
+        x = tf.add(x, inputs)
       logging.info('Project shape: %s', x.shape)
       return x
 
@@ -657,7 +657,7 @@ class Model(tf.keras.Model):
       output_filters = round_filters(block_args.output_filters,
                                      self._global_params)
       kernel_size = block_args.kernel_size
-      if self._fix_head_stem and (i == 0 or i == len(self._blocks_args) - 1):
+      if self._fix_head_stem and i in [0, len(self._blocks_args) - 1]:
         repeats = block_args.num_repeat
       else:
         repeats = round_repeats(block_args.num_repeat, self._global_params)
@@ -701,10 +701,9 @@ class Model(tf.keras.Model):
         block_args = block_args._replace(
             input_filters=block_args.output_filters, strides=[1, 1])
         # pylint: enable=protected-access
-      for _ in xrange(block_args.num_repeat - 1):
-        self._blocks.append(
-            conv_block(block_args, self._global_params, name=block_name()))
-
+      self._blocks.extend(
+          conv_block(block_args, self._global_params, name=block_name())
+          for _ in xrange(block_args.num_repeat - 1))
     # Head part.
     self._head = Head(self._global_params)
 
@@ -743,7 +742,7 @@ class Model(tf.keras.Model):
       # the first reduction point.
       if (block.block_args.super_pixel == 1 and idx == 0):
         reduction_idx += 1
-        self.endpoints['reduction_%s' % reduction_idx] = outputs
+        self.endpoints[f'reduction_{reduction_idx}'] = outputs
 
       elif ((idx == len(self._blocks) - 1) or
             self._blocks[idx + 1].block_args.strides[0] > 1):
@@ -756,20 +755,20 @@ class Model(tf.keras.Model):
         survival_prob = 1.0 - drop_rate * float(idx) / len(self._blocks)
         logging.info('block_%s survival_prob: %s', idx, survival_prob)
       outputs = block(outputs, training=training, survival_prob=survival_prob)
-      self.endpoints['block_%s' % idx] = outputs
+      self.endpoints[f'block_{idx}'] = outputs
       if is_reduction:
-        self.endpoints['reduction_%s' % reduction_idx] = outputs
+        self.endpoints[f'reduction_{reduction_idx}'] = outputs
       if block.endpoints:
         for k, v in six.iteritems(block.endpoints):
-          self.endpoints['block_%s/%s' % (idx, k)] = v
+          self.endpoints[f'block_{idx}/{k}'] = v
           if is_reduction:
-            self.endpoints['reduction_%s/%s' % (reduction_idx, k)] = v
+            self.endpoints[f'reduction_{reduction_idx}/{k}'] = v
     self.endpoints['features'] = outputs
 
     if not features_only:
       # Calls final layers and returns logits.
       outputs = self._head(outputs, training, pooled_features_only)
-      self.endpoints.update(self._head.endpoints)
+      self.endpoints |= self._head.endpoints
 
     return [outputs] + list(
         filter(lambda endpoint: endpoint is not None, [

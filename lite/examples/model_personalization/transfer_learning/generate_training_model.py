@@ -147,14 +147,13 @@ class TransferLearningModel(tf.Module):
     Returns:
       Map of restored weight and bias.
     """
-    restored_tensors = {}
     restored = tf.raw_ops.Restore(
         file_pattern=checkpoint_path,
         tensor_name=self.ws.name,
         dt=np.float32,
         name='restore')
     self.ws.assign(restored)
-    restored_tensors['ws'] = restored
+    restored_tensors = {'ws': restored}
     restored = tf.raw_ops.Restore(
         file_pattern=checkpoint_path,
         tensor_name=self.bs.name,

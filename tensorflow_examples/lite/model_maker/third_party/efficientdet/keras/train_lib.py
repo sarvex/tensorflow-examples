@@ -71,12 +71,8 @@ class UpdatePruningStep(tf.keras.callbacks.Callback):
     self.step = tf.keras.backend.get_value(self.model.optimizer.iterations)
 
   def on_train_batch_begin(self, batch, logs=None):
-    tuples = []
-
-    for layer in self.prunable_layers:
-      if layer.built:
-        tuples.append((layer.pruning_step, self.step))
-
+    tuples = [(layer.pruning_step, self.step) for layer in self.prunable_layers
+              if layer.built]
     tf.keras.backend.batch_set_value(tuples)
     self.step = self.step + 1
 
@@ -109,7 +105,7 @@ class PruningSummaries(tf.keras.callbacks.TensorBoard):
 
     super().__init__(log_dir=log_dir, update_freq=update_freq, **kwargs)
 
-    log_dir = self.log_dir + '/metrics'
+    log_dir = f'{self.log_dir}/metrics'
     self._file_writer = tf.summary.create_file_writer(log_dir)
 
   def _log_pruning_metrics(self, logs, step):
@@ -123,14 +119,11 @@ class PruningSummaries(tf.keras.callbacks.TensorBoard):
     if logs is not None:
       super().on_epoch_begin(epoch, logs)
 
-    pruning_logs = {}
     params = []
     prunable_layers = _collect_prunable_layers(self.model)
     for layer in prunable_layers:
       for _, mask, threshold in layer.pruning_vars:
-        params.append(mask)
-        params.append(threshold)
-
+        params.extend((mask, threshold))
     params.append(self.model.optimizer.iterations)
 
     values = tf.keras.backend.batch_get_value(params)
@@ -140,11 +133,12 @@ class PruningSummaries(tf.keras.callbacks.TensorBoard):
 
     param_value_pairs = list(zip(params, values))
 
-    for mask, mask_value in param_value_pairs[::2]:
-      pruning_logs.update({mask.name + '/sparsity': 1 - np.mean(mask_value)})
-
+    pruning_logs = {
+        f'{mask.name}/sparsity': 1 - np.mean(mask_value)
+        for mask, mask_value in param_value_pairs[::2]
+    }
     for threshold, threshold_value in param_value_pairs[1::2]:
-      pruning_logs.update({threshold.name + '/threshold': threshold_value})
+      pruning_logs[f'{threshold.name}/threshold'] = threshold_value
 
     self._log_pruning_metrics(pruning_logs, iteration)
 
@@ -285,7 +279,7 @@ def learning_rate_schedule(params):
                                 params['lr_warmup_step'],
                                 params['poly_lr_power'], params['total_steps'])
 
-  raise ValueError('unknown lr_decay_method: {}'.format(lr_decay_method))
+  raise ValueError(f'unknown lr_decay_method: {lr_decay_method}')
 
 
 def get_optimizer(params):
@@ -301,8 +295,7 @@ def get_optimizer(params):
   else:
     raise ValueError('optimizers should be adam or sgd')
 
-  moving_average_decay = params['moving_average_decay']
-  if moving_average_decay:
+  if moving_average_decay := params['moving_average_decay']:
     # TODO(tanmingxing): potentially add dynamic_decay for new tfa release.
     from tensorflow_addons import optimizers as tfa_optimizers  # pylint: disable=g-import-not-at-top
     optimizer = tfa_optimizers.MovingAverage(
@@ -674,8 +667,7 @@ class EfficientDetNetTrain(efficientdet_keras.EfficientDetNet):
         cls_targets_at_level = tf.reshape(cls_targets_at_level,
                                           [bs, width, height, -1])
 
-      class_loss_layer = self.loss.get(FocalLoss.__name__, None)
-      if class_loss_layer:
+      if class_loss_layer := self.loss.get(FocalLoss.__name__, None):
         cls_loss = class_loss_layer([num_positives_sum, cls_targets_at_level],
                                     cls_outputs[level])
         if self.config.data_format == 'channels_first':
@@ -757,7 +749,7 @@ class EfficientDetNetTrain(efficientdet_keras.EfficientDetNet):
             self(images, training=True))
         loss_dtype = seg_outputs.dtype
       else:
-        raise ValueError('No valid head found: {}'.format(self.config.heads))
+        raise ValueError(f'No valid head found: {self.config.heads}')
       labels = util_keras.fp16_to_fp32_nested(labels)
 
       total_loss = 0
@@ -830,7 +822,7 @@ class EfficientDetNetTrain(efficientdet_keras.EfficientDetNet):
           self(images, training=False))
       loss_dtype = seg_outputs.dtype
     else:
-      raise ValueError('No valid head found: {}'.format(self.config.heads))
+      raise ValueError(f'No valid head found: {self.config.heads}')
 
     labels = util_keras.fp16_to_fp32_nested(labels)
 

@@ -117,7 +117,7 @@ def visualize(
       # Draw id text when tracker is enabled for MoveNet MultiPose model.
       # (id = None when using single pose model or when tracker is None)
       if person.id:
-        id_text = 'id = ' + str(person.id)
+        id_text = f'id = {str(person.id)}'
         cv2.putText(image, id_text, start_point, cv2.FONT_HERSHEY_PLAIN, 1,
                     (0, 0, 255), 1)
 

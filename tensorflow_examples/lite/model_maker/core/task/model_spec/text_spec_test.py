@@ -27,10 +27,11 @@ from official.nlp.data import classifier_data_lib
 
 
 def _gen_examples():
-  examples = []
-  examples.append(
-      classifier_data_lib.InputExample(
-          guid=0, text_a='Really good.', label='pos'))
+  examples = [
+      classifier_data_lib.InputExample(guid=0,
+                                       text_a='Really good.',
+                                       label='pos')
+  ]
   examples.append(
       classifier_data_lib.InputExample(guid=1, text_a='So bad.', label='neg'))
   return examples
@@ -132,8 +133,7 @@ class AverageWordVecModelSpecTest(tf.test.TestCase):
                                        minval=0,
                                        maxval=num_classes,
                                        dtype=tf.dtypes.int32)
-    ds = tf.data.Dataset.from_tensor_slices((batched_features, batched_labels))
-    return ds
+    return tf.data.Dataset.from_tensor_slices((batched_features, batched_labels))
 
 
 class BertClassifierModelSpecTest(tf.test.TestCase, parameterized.TestCase):
@@ -157,19 +157,20 @@ class BertClassifierModelSpecTest(tf.test.TestCase, parameterized.TestCase):
 
     ds = _get_dataset_from_tfrecord(tfrecord_file,
                                     model_spec.get_name_to_features())
-    expected_features = []
-    expected_features.append({
-        'input_ids': [101, 2428, 102],
-        'input_mask': [1, 1, 1],
-        'segment_ids': [0, 0, 0],
-        'label_ids': 0
-    })
-    expected_features.append({
-        'input_ids': [101, 2061, 102],
-        'input_mask': [1, 1, 1],
-        'segment_ids': [0, 0, 0],
-        'label_ids': 1
-    })
+    expected_features = [
+        {
+            'input_ids': [101, 2428, 102],
+            'input_mask': [1, 1, 1],
+            'segment_ids': [0, 0, 0],
+            'label_ids': 0,
+        },
+        {
+            'input_ids': [101, 2061, 102],
+            'input_mask': [1, 1, 1],
+            'segment_ids': [0, 0, 0],
+            'label_ids': 1,
+        },
+    ]
     for i, sample in enumerate(ds):
       for k, v in expected_features[i].items():
         self.assertTrue((sample[k].numpy() == v).all())
@@ -221,8 +222,7 @@ class BertClassifierModelSpecTest(tf.test.TestCase, parameterized.TestCase):
     }
     y = batched_labels
 
-    ds = tf.data.Dataset.from_tensor_slices((x, y))
-    return ds
+    return tf.data.Dataset.from_tensor_slices((x, y))
 
 
 if __name__ == '__main__':

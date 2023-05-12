@@ -60,10 +60,7 @@ class Train(object):
   def decay(self, epoch):
     if epoch < 150:
       return 0.1
-    if epoch >= 150 and epoch < 225:
-      return 0.01
-    if epoch >= 225:
-      return 0.001
+    return 0.01 if epoch < 225 else 0.001
 
   def compute_loss(self, label, predictions):
     loss = tf.reduce_sum(self.loss_object(label, predictions)) * (
@@ -202,7 +199,7 @@ def main(epochs,
          data_dir=None,
          num_gpu=1):
 
-  devices = ['/device:GPU:{}'.format(i) for i in range(num_gpu)]
+  devices = [f'/device:GPU:{i}' for i in range(num_gpu)]
   strategy = tf.distribute.MirroredStrategy(devices)
 
   train_dataset, test_dataset, _ = utils.create_dataset(

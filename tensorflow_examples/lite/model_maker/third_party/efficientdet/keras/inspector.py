@@ -94,7 +94,7 @@ def main(_):
       tf.io.gfile.rmtree(model_dir)
     driver.export(model_dir, FLAGS.tensorrt, FLAGS.tflite, FLAGS.file_pattern,
                   FLAGS.num_calibration_steps)
-    print('Model are exported to %s' % model_dir)
+    print(f'Model are exported to {model_dir}')
   elif FLAGS.mode == 'infer':
     image_file = tf.io.read_file(FLAGS.input_image)
     image_arrays = tf.io.decode_image(image_file)
@@ -118,7 +118,7 @@ def main(_):
         max_boxes_to_draw=model_config.nms_configs.max_output_size)
     output_image_path = os.path.join(FLAGS.output_image_dir, '0.jpg')
     Image.fromarray(img).save(output_image_path)
-    print('writing file to %s' % output_image_path)
+    print(f'writing file to {output_image_path}')
   elif FLAGS.mode == 'benchmark':
     if FLAGS.saved_model_dir:
       driver.load(FLAGS.saved_model_dir)
@@ -150,7 +150,7 @@ def main(_):
       driver.load(FLAGS.saved_model_dir)
     cap = cv2.VideoCapture(FLAGS.input_video)
     if not cap.isOpened():
-      print('Error opening input video: {}'.format(FLAGS.input_video))
+      print(f'Error opening input video: {FLAGS.input_video}')
 
     out_ptr = None
     if FLAGS.output_video:

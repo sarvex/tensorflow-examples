@@ -25,8 +25,7 @@ def dict_with_default(default_dict, **updates):
 
 
 def create_int_feature(values):
-  feature = tf.train.Feature(int64_list=tf.train.Int64List(value=list(values)))
-  return feature
+  return tf.train.Feature(int64_list=tf.train.Int64List(value=list(values)))
 
 
 def get_num_gpus(num_gpus):
@@ -46,8 +45,8 @@ def wrap_doc(func_or_class, short_desciption):
   elif inspect.isclass(func_or_class):
     doc = func_or_class.__init__.__doc__
   else:
-    raise ValueError('Only support function or classtion, but got: {}.'.format(
-        func_or_class))
+    raise ValueError(
+        f'Only support function or classtion, but got: {func_or_class}.')
 
   if not doc:
     doc = ''

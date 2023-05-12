@@ -55,7 +55,7 @@ class RecommendationDataLoader(dataloader.DataLoader):
     """
     super(RecommendationDataLoader, self).__init__(dataset, size)
     if not isinstance(vocab, dict):
-      raise ValueError('Expect vocab to be a dict, but got: {}'.format(vocab))
+      raise ValueError(f'Expect vocab to be a dict, but got: {vocab}')
     self.vocab = vocab
     self.max_vocab_id = max(self.vocab.keys())  # The max id in the vocab.
 
@@ -78,10 +78,7 @@ class RecommendationDataLoader(dataloader.DataLoader):
     )
     # TODO(tianlin): Consider to move the num_batches below to the super class.
     # Calculate steps by train data, if it is not set.
-    if total_steps:
-      num_batches = total_steps
-    else:
-      num_batches = self._size // batch_size
+    num_batches = total_steps if total_steps else self._size // batch_size
     return ds.take(num_batches)
 
   def split(self, fraction):
@@ -189,7 +186,7 @@ class RecommendationDataLoader(dataloader.DataLoader):
     test_file = os.path.join(generated_examples_dir, test_filename)
     meta_file = os.path.join(generated_examples_dir, meta_filename)
     # Create dataset and meta, only if they are not existed.
-    if not all([os.path.exists(f) for f in (train_file, test_file, meta_file)]):
+    if not all(os.path.exists(f) for f in (train_file, test_file, meta_file)):
       stats = _gen.generate_datasets(
           data_dir,
           output_dir=generated_examples_dir,
@@ -204,8 +201,7 @@ class RecommendationDataLoader(dataloader.DataLoader):
           vocab_filename=vocab_filename,
       )
       file_util.write_json_file(meta_file, stats)
-    meta = file_util.load_json_file(meta_file)
-    return meta
+    return file_util.load_json_file(meta_file)
 
   @classmethod
   def get_num_classes(cls, meta) -> int:
@@ -268,8 +264,7 @@ class RecommendationDataLoader(dataloader.DataLoader):
       Data Loader.
     """
     if data_tag not in ('train', 'test'):
-      raise ValueError(
-          'Expected data_tag is train or test, but got {}'.format(data_tag))
+      raise ValueError(f'Expected data_tag is train or test, but got {data_tag}')
     if not generated_examples_dir:
       # By default, set generated examples dir to data_dir
       generated_examples_dir = data_dir

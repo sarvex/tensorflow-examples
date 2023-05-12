@@ -45,8 +45,7 @@ def _get_quantization_config_list(input_dim, num_classes, max_input_value):
 
 def _mock_gen_dataset(data, batch_size=1, is_training=False):  # pylint: disable=unused-argument
   ds = data.dataset
-  ds = ds.batch(batch_size)
-  return ds
+  return ds.batch(batch_size)
 
 
 class ModelUtilTest(tf.test.TestCase):

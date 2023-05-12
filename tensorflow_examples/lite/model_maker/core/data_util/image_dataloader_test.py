@@ -76,7 +76,7 @@ class ImageDataLoaderTest(tf.test.TestCase):
     self.assertEqual(data.num_classes, 2)
     self.assertEqual(data.index_to_label, ['daisy', 'tulips'])
     for image, label in data.gen_dataset():
-      self.assertTrue(label.numpy() == 1 or label.numpy() == 0)
+      self.assertTrue(label.numpy() in [1, 0])
       if label.numpy() == 0:
         raw_image_tensor = image_dataloader.load_image(
             os.path.join(self.image_path, 'daisy', '0.jpeg'))

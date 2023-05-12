@@ -34,8 +34,8 @@ from tensorflow_examples.lite.model_maker.core.task.model_spec import text_spec
 
 def _get_data(model_spec, version):
   path = test_util.get_test_data_path('squad_testdata')
-  train_data_path = os.path.join(path, 'train-v%s.json' % version)
-  validation_data_path = os.path.join(path, 'dev-v%s.json' % version)
+  train_data_path = os.path.join(path, f'train-v{version}.json')
+  validation_data_path = os.path.join(path, f'dev-v{version}.json')
   version_2_with_negative = version.startswith('2')
   train_data = text_dataloader.QuestionAnswerDataLoader.from_squad(
       train_data_path,

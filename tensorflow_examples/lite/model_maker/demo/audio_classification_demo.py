@@ -165,7 +165,7 @@ def run(spec,
   print(model.confusion_matrix(test_data))
   print('labels: ', test_data.index_to_label)
 
-  print('\nExporing the Saved model and TFLite model to {}'.format(export_dir))
+  print(f'\nExporing the Saved model and TFLite model to {export_dir}')
   model.export(
       export_dir, export_format=(ExportFormat.TFLITE, ExportFormat.SAVED_MODEL))
 
@@ -175,18 +175,17 @@ def main(_):
 
   export_dir = os.path.expanduser(FLAGS.export_dir)
 
-  if not FLAGS.data_dir:
-    if FLAGS.dataset == 'esc50':
-      data_dir = download_esc50_dataset()
-    elif FLAGS.dataset == 'bird':
-      data_dir = download_bird_dataset()
-    elif FLAGS.dataset == 'mini_speech_command':
-      data_dir = download_speech_commands_dataset()
-    else:
-      raise ValueError('Unsupported dataset type: ', FLAGS.dataset)
-  else:
+  if FLAGS.data_dir:
     data_dir = os.path.expanduser(FLAGS.data_dir)
 
+  elif FLAGS.dataset == 'esc50':
+    data_dir = download_esc50_dataset()
+  elif FLAGS.dataset == 'bird':
+    data_dir = download_bird_dataset()
+  elif FLAGS.dataset == 'mini_speech_command':
+    data_dir = download_speech_commands_dataset()
+  else:
+    raise ValueError('Unsupported dataset type: ', FLAGS.dataset)
   run(FLAGS.spec, data_dir, FLAGS.dataset, export_dir=export_dir)
 
 

@@ -156,8 +156,8 @@ class CacheFilesWriterTest(tf.test.TestCase):
     self.assertEqual(xml_dict, expected_xml_dict)
 
   def test_csv_cache_writer(self):
-    label_map = {1: 'Baked Goods', 2: 'Cheese', 3: 'Salad'}
     images_dir = test_util.get_test_data_path('salad_images')
+    label_map = {1: 'Baked Goods', 2: 'Cheese', 3: 'Salad'}
     cache_writer = dataloader_util.CsvCacheFilesWriter(
         label_map, images_dir, num_shards=1)
 
@@ -179,8 +179,8 @@ class CacheFilesWriterTest(tf.test.TestCase):
       annotations_json_file = cache_files.annotations_json_file
       self.assertTrue(os.path.isfile(annotations_json_file))
       self.assertGreater(os.path.getsize(annotations_json_file), 0)
-      expected_json_file = test_util.get_test_data_path(set_name.lower() +
-                                                        '_annotations.json')
+      expected_json_file = test_util.get_test_data_path(
+          f'{set_name.lower()}_annotations.json')
       self.assertTrue(filecmp.cmp(annotations_json_file, expected_json_file))
 
       # Checks the meta_data file.

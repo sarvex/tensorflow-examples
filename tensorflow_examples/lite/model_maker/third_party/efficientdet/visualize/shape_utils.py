@@ -234,15 +234,12 @@ def static_or_dynamic_map_fn(fn, elems, dtype=None,
     if not elems_shape or not elems_shape[0]:
       return tf.map_fn(fn, elems, dtype, parallel_iterations, back_prop)
     outputs = [fn(arg) for arg in tf.unstack(elems)]
-  # Stack `outputs`, which is a list of Tensors or list of lists of Tensors
-  if all([isinstance(output, tf.Tensor) for output in outputs]):
+  if all(isinstance(output, tf.Tensor) for output in outputs):
     return tf.stack(outputs)
-  else:
-    if all([isinstance(output, list) for output in outputs]):
-      if all([all(
-          [isinstance(entry, tf.Tensor) for entry in output_list])
-              for output_list in outputs]):
-        return [tf.stack(output_tuple) for output_tuple in zip(*outputs)]
+  if all(isinstance(output, list) for output in outputs) and all(
+      all(isinstance(entry, tf.Tensor) for entry in output_list)
+      for output_list in outputs):
+    return [tf.stack(output_tuple) for output_tuple in zip(*outputs)]
   raise ValueError('`fn` should return a Tensor or a list of Tensors.')
 
 
@@ -271,9 +268,12 @@ def check_min_image_dim(min_dim, image_tensor):
   image_width = static_shape.get_width(image_shape)
   if image_height is None or image_width is None:
     shape_assert = tf.Assert(
-        tf.logical_and(tf.greater_equal(tf.shape(image_tensor)[1], min_dim),
-                       tf.greater_equal(tf.shape(image_tensor)[2], min_dim)),
-        ['image size must be >= {} in both height and width.'.format(min_dim)])
+        tf.logical_and(
+            tf.greater_equal(tf.shape(image_tensor)[1], min_dim),
+            tf.greater_equal(tf.shape(image_tensor)[2], min_dim),
+        ),
+        [f'image size must be >= {min_dim} in both height and width.'],
+    )
     with tf.control_dependencies([shape_assert]):
       return tf.identity(image_tensor)
 
@@ -305,13 +305,12 @@ def assert_shape_equal(shape_a, shape_b):
   Raises:
     ValueError: When shapes are both static and unequal.
   """
-  if (all(isinstance(dim, int) for dim in shape_a) and
-      all(isinstance(dim, int) for dim in shape_b)):
-    if shape_a != shape_b:
-      raise ValueError('Unequal shapes {}, {}'.format(shape_a, shape_b))
-    else: return tf.no_op()
-  else:
+  if not all(isinstance(dim, int) for dim in shape_a) or not all(
+      isinstance(dim, int) for dim in shape_b):
     return tf.assert_equal(shape_a, shape_b)
+  if shape_a != shape_b:
+    raise ValueError(f'Unequal shapes {shape_a}, {shape_b}')
+  else: return tf.no_op()
 
 
 def assert_shape_equal_along_first_dimension(shape_a, shape_b):
@@ -334,13 +333,11 @@ def assert_shape_equal_along_first_dimension(shape_a, shape_b):
   Raises:
     ValueError: When shapes are both static and unequal.
   """
-  if isinstance(shape_a[0], int) and isinstance(shape_b[0], int):
-    if shape_a[0] != shape_b[0]:
-      raise ValueError('Unequal first dimension {}, {}'.format(
-          shape_a[0], shape_b[0]))
-    else: return tf.no_op()
-  else:
+  if not isinstance(shape_a[0], int) or not isinstance(shape_b[0], int):
     return tf.assert_equal(shape_a[0], shape_b[0])
+  if shape_a[0] != shape_b[0]:
+    raise ValueError(f'Unequal first dimension {shape_a[0]}, {shape_b[0]}')
+  else: return tf.no_op()
 
 
 def assert_box_normalized(boxes, maximum_normalized_coordinate=1.1):
@@ -392,9 +389,9 @@ def flatten_dimensions(inputs, first, last):
     ValueError: if first and last arguments are incorrect.
   """
   if first >= inputs.shape.ndims or last > inputs.shape.ndims:
-    raise ValueError('`first` and `last` must be less than inputs.shape.ndims. '
-                     'found {} and {} respectively while ndims is {}'.format(
-                         first, last, inputs.shape.ndims))
+    raise ValueError(
+        f'`first` and `last` must be less than inputs.shape.ndims. found {first} and {last} respectively while ndims is {inputs.shape.ndims}'
+    )
   shape = combined_static_and_dynamic_shape(inputs)
   flattened_dim_prod = tf.reduce_prod(shape[first:last],
                                       keepdims=True)

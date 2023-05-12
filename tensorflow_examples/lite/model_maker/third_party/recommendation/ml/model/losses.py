@@ -49,8 +49,7 @@ class BatchSoftmax(tf.keras.losses.Loss):
         tf.shape(logits)[0], tf.shape(logits)[1], dtype=tf.dtypes.float32)
     batch_loss = tf.nn.softmax_cross_entropy_with_logits(
         labels=full_labels, logits=logits)
-    loss = tf.reduce_mean(batch_loss)
-    return loss
+    return tf.reduce_mean(batch_loss)
 
 
 class GlobalSoftmax(tf.keras.losses.Loss):
@@ -84,5 +83,4 @@ class GlobalSoftmax(tf.keras.losses.Loss):
         tf.transpose(y_true)[0], tf.shape(logits)[1], dtype=tf.dtypes.float32)
     batch_loss = tf.nn.softmax_cross_entropy_with_logits(
         labels=full_labels, logits=logits)
-    loss = tf.reduce_mean(batch_loss)
-    return loss
+    return tf.reduce_mean(batch_loss)

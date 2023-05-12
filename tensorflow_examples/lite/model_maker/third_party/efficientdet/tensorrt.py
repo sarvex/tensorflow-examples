@@ -55,8 +55,8 @@ def benchmark(trt_savedmodel_dir: str, warmup_runs: int = 5, bm_runs: int = 20):
     input_shape = graph.get_tensor_by_name('input:0').shape
     x = np.ones(input_shape).astype(np.float32)
     ss = lambda i: '' if i == 0 else '_%d' % i
-    outputs = ['box_net/box-predict%s/BiasAdd:0' % ss(i) for i in range(1)]
-    outputs += ['class_net/class-predict%s/BiasAdd:0' % ss(i) for i in range(5)]
+    outputs = [f'box_net/box-predict{ss(i)}/BiasAdd:0' for i in range(1)]
+    outputs += [f'class_net/class-predict{ss(i)}/BiasAdd:0' for i in range(5)]
     # Apply reduce_sum to avoid massive data move between GPU and CPU.
     outputs = [tf.reduce_sum(graph.get_tensor_by_name(i)) for i in outputs]
 

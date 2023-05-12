@@ -41,9 +41,7 @@ class BoundingBoxTracker(Tracker):
 
     sim_matrix = []
     for person in persons:
-      row = []
-      for track in self._tracks:
-        row.append(self._iou(person, track))
+      row = [self._iou(person, track) for track in self._tracks]
       sim_matrix.append(row)
     return sim_matrix
 

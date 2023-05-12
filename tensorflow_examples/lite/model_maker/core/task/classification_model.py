@@ -88,11 +88,10 @@ class ClassificationModel(custom_model.CustomModel):
     topk_prob, topk_id = tf.math.top_k(predicted_prob, k=k)
     topk_label = np.array(self.index_to_label)[topk_id.numpy()]
 
-    label_prob = []
-    for label, prob in zip(topk_label, topk_prob.numpy()):
-      label_prob.append(list(zip(label, prob)))
-
-    return label_prob
+    return [
+        list(zip(label, prob))
+        for label, prob in zip(topk_label, topk_prob.numpy())
+    ]
 
   def _export_labels(self, label_filepath):
     if label_filepath is None:
@@ -120,8 +119,8 @@ class ClassificationModel(custom_model.CustomModel):
     predictions, labels = [], []
 
     lite_runner = model_util.get_lite_runner(tflite_filepath, self.model_spec)
+    log_steps = 1000
     for i, (feature, label) in enumerate(data_util.generate_elements(ds)):
-      log_steps = 1000
       tf.compat.v1.logging.log_every_n(tf.compat.v1.logging.DEBUG,
                                        'Processing example: #%d\n%s', log_steps,
                                        i, feature)
@@ -139,5 +138,4 @@ class ClassificationModel(custom_model.CustomModel):
       labels.append(label)
 
     predictions, labels = np.array(predictions), np.array(labels)
-    result = {'accuracy': (predictions == labels).mean()}
-    return result
+    return {'accuracy': (predictions == labels).mean()}

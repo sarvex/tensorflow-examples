@@ -31,9 +31,7 @@ class ApiGenTest(tf.test.TestCase):
 
     imports_json = json.dumps(imports, indent=2, sort_keys=True)
     golden_content = api_gen._read_golden_text('golden_api.json')
-    msg = ('Exported APIs do not match `golden_api.json`. Please check it.\n\n'
-           'Imports in json format: \n{}\n\n\n'
-           'Golden file content:\n{}\n\n').format(imports_json, golden_content)
+    msg = f'Exported APIs do not match `golden_api.json`. Please check it.\n\nImports in json format: \n{imports_json}\n\n\nGolden file content:\n{golden_content}\n\n'
     self.assertDictEqual(imports, golden, msg)
 
   def test_golden_api_doc(self):
@@ -42,9 +40,7 @@ class ApiGenTest(tf.test.TestCase):
 
     api_keys = list(golden.keys())
     doc_keys = list(golden_doc.keys())
-    msg = ('Expect package keys are matched: \n'
-           'In `golden_api.json`: \n{}\n\n'
-           'In `golden_api_doc.py`: \n{}\n\n').format(api_keys, doc_keys)
+    msg = f'Expect package keys are matched: \nIn `golden_api.json`: \n{api_keys}\n\nIn `golden_api_doc.py`: \n{doc_keys}\n\n'
     self.assertListEqual(api_keys, doc_keys, msg)
 
 

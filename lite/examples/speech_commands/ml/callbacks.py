@@ -25,8 +25,7 @@ from keras.callbacks import Callback
 def log_loss(y_true, y_pred, eps=1e-12):
   y_pred = np.clip(y_pred, eps, 1. - eps)
   ce = -(np.sum(y_true * np.log(y_pred), axis=1))
-  mce = ce.mean()
-  return mce
+  return ce.mean()
 
 
 class ConfusionMatrixCallback(Callback):
@@ -47,24 +46,19 @@ class ConfusionMatrixCallback(Callback):
   def accuracies(self, confusion_val):
     accuracies = []
     for i in range(confusion_val.shape[0]):
-      num = confusion_val[i, :].sum()
-      if num:
+      if num := confusion_val[i, :].sum():
         accuracies.append(confusion_val[i, i] / num)
       else:
         accuracies.append(0.0)
-    accuracies = np.float32(accuracies)
-    return accuracies
+    return np.float32(accuracies)
 
   def accuracy(self, confusion_val):
-    num_correct = 0
-    for i in range(confusion_val.shape[0]):
-      num_correct += confusion_val[i, i]
-    accuracy = float(num_correct) / confusion_val.sum()
-    return accuracy
+    num_correct = sum(confusion_val[i, i] for i in range(confusion_val.shape[0]))
+    return float(num_correct) / confusion_val.sum()
 
   def on_epoch_end(self, epoch, logs=None):
     y_true, y_pred = [], []
-    for i in range(self.validation_steps):
+    for _ in range(self.validation_steps):
       X_batch, y_true_batch = next(self.validation_data)
       y_pred_batch = self.model.predict(X_batch)
 

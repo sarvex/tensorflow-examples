@@ -130,8 +130,8 @@ def get_cache_files(cache_dir: Optional[str],
   # filename, e.g: '/tmp/cache/train'.
   cache_prefix = os.path.join(cache_dir, cache_prefix_filename)
   tf.compat.v1.logging.info(
-      'Cache will be stored in %s with prefix filename %s. Cache_prefix is %s' %
-      (cache_dir, cache_prefix_filename, cache_prefix))
+      f'Cache will be stored in {cache_dir} with prefix filename {cache_prefix_filename}. Cache_prefix is {cache_prefix}'
+  )
 
   # Cached files including the TFRecord files, the annotations json file and
   # the meda data file.
@@ -180,7 +180,7 @@ def get_cache_files_sequence(cache_dir: str, cache_prefix_filename: str,
   """
   cache_files_list = []
   for set_prefix in set_prefixes:
-    prefix_filename = set_prefix.lower() + '_' + cache_prefix_filename
+    prefix_filename = f'{set_prefix.lower()}_{cache_prefix_filename}'
     cache_files = get_cache_files(cache_dir, prefix_filename, num_shards)
     cache_files_list.append(cache_files)
   return tuple(cache_files_list)
@@ -299,18 +299,17 @@ class PascalVocCacheFilesWriter(CacheFilesWriter):
     # Gets the paths to annotations.
     if annotation_filenames:
       ann_path_list = [
-          os.path.join(annotations_dir, annotation + '.xml')
+          os.path.join(annotations_dir, f'{annotation}.xml')
           for annotation in annotation_filenames
       ]
     else:
-      ann_path_list = list(tf.io.gfile.glob(annotations_dir + r'/*.xml'))
+      ann_path_list = list(tf.io.gfile.glob(f'{annotations_dir}/*.xml'))
 
     for ann_path in ann_path_list:
       with tf.io.gfile.GFile(ann_path, 'r') as fid:
         xml_str = fid.read()
       xml = etree.fromstring(xml_str)
-      xml_dict = tfrecord_util.recursive_parse_xml_to_dict(xml)['annotation']
-      yield xml_dict
+      yield tfrecord_util.recursive_parse_xml_to_dict(xml)['annotation']
 
 
 def _get_xml_dict_from_csv_lines(images_dir: str, image_filename: str,
@@ -375,8 +374,4 @@ class CsvCacheFilesWriter(CacheFilesWriter):
       image_dict[image_filename].append(line)
 
     for image_filename, lines in image_dict.items():
-      # Converts csv_lines for a certain image to dict holding PASCAL VOC XML
-      # fields.
-      xml_dict = _get_xml_dict_from_csv_lines(self.images_dir, image_filename,
-                                              lines)
-      yield xml_dict
+      yield _get_xml_dict_from_csv_lines(self.images_dir, image_filename, lines)

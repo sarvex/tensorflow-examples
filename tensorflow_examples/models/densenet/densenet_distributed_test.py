@@ -65,18 +65,22 @@ class DenseNetDistributedBenchmark(tf.test.Benchmark):
     train_loss, train_acc, _, test_acc = distributed_train.main(**kwargs)
     wall_time_sec = time.time() - start_time_sec
 
-    metrics = []
-    metrics.append({'name': 'accuracy_top_1',
-                    'value': test_acc,
-                    'min_value': top_1_min,
-                    'max_value': top_1_max})
-
-    metrics.append({'name': 'training_accuracy_top_1',
-                    'value': train_acc})
-
-    metrics.append({'name': 'train_loss',
-                    'value': train_loss})
-
+    metrics = [
+        {
+            'name': 'accuracy_top_1',
+            'value': test_acc,
+            'min_value': top_1_min,
+            'max_value': top_1_max,
+        },
+        {
+            'name': 'training_accuracy_top_1',
+            'value': train_acc
+        },
+        {
+            'name': 'train_loss',
+            'value': train_loss
+        },
+    ]
     self.report_benchmark(wall_time=wall_time_sec, metrics=metrics)
 
 if __name__ == '__main__':

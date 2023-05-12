@@ -51,20 +51,14 @@ class PlaneStrikeEnv(gym.Env):
     # Hit
     if self.hidden_board[action_x][
         action_y] == common.HIDDEN_BOARD_CELL_OCCUPIED:
-      # Non-repeat move
-      if self.observation[action_x][action_y] == common.BOARD_CELL_UNTRIED:
-        self.hit_count = self.hit_count + 1
-        self.observation[action_x][action_y] = common.BOARD_CELL_HIT
-        # Successful strike
-        if self.hit_count == self.plane_size:
-          # Game finished
-          return self.observation, HIT_REWARD, True, {}
-        else:
-          return self.observation, HIT_REWARD, False, {}
-      # Repeat strike
-      else:
+      if self.observation[action_x][action_y] != common.BOARD_CELL_UNTRIED:
         return self.observation, REPEAT_STRIKE_REWARD, False, {}
-    # Miss
+      self.hit_count = self.hit_count + 1
+      self.observation[action_x][action_y] = common.BOARD_CELL_HIT
+        # Successful strike
+      return ((self.observation, HIT_REWARD, True,
+               {}) if self.hit_count == self.plane_size else
+              (self.observation, HIT_REWARD, False, {}))
     else:
       # Unsuccessful strike
       self.observation[action_x][action_y] = common.BOARD_CELL_MISS

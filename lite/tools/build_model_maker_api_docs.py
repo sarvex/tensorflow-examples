@@ -81,10 +81,7 @@ class DeprecatedAPIFilter(object):
     full_name = list(path) + [child_name]
     full_name = '.'.join(full_name)
 
-    for d in self._deprecated:
-      if full_name == d:
-        return True
-    return False
+    return any(full_name == d for d in self._deprecated)
 
   def __call__(self, path: Sequence[str], parent: Any,
                children: Children) -> Children:

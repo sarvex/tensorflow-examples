@@ -58,7 +58,7 @@ def get_input_spec(encoder_type: str,
   """
   etype = encoder_type.upper()
   if etype not in {'CNN', 'LSTM', 'BOW'}:
-    raise ValueError('Not support encoder_type: {}'.format(etype))
+    raise ValueError(f'Not support encoder_type: {etype}')
 
   return recommendation.spec.InputSpec(
       activity_feature_groups=[
@@ -133,7 +133,7 @@ def run(data_dir, export_dir, batch_size=16, epochs=5, encoder_type='bow'):
 
   # Evaluate with test_data.
   history = model.evaluate(test_data)
-  print('Test metrics from Keras model: %s' % history)
+  print(f'Test metrics from Keras model: {history}')
 
   # Export tflite model.
   model.export(export_dir)
@@ -141,7 +141,7 @@ def run(data_dir, export_dir, batch_size=16, epochs=5, encoder_type='bow'):
   # Evaluate tflite model.
   tflite_model = os.path.join(export_dir, 'model.tflite')
   history = model.evaluate_tflite(tflite_model, test_data)
-  print('Test metrics from TFLite model: %s' % history)
+  print(f'Test metrics from TFLite model: {history}')
 
 
 def main(_):

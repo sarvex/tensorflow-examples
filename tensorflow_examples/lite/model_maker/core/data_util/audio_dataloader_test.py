@@ -122,14 +122,27 @@ class LoadFromESC50Test(Base):
     headers = [
         'filename', 'fold', 'target', 'category', 'esc10', 'src_file', 'take'
     ]
-    rows = []
-    rows.append(['1-100032-A-0.wav', '1', '0', 'dog', 'True', '100032', 'A'])
-    rows.append([
-        '1-100210-B-36.wav', '2', '36', 'vacuum_cleaner', 'False', '100210', 'B'
-    ])
-    rows.append([
-        '1-100210-A-36.wav', '1', '36', 'vacuum_cleaner', 'False', '100210', 'A'
-    ])
+    rows = [
+        ['1-100032-A-0.wav', '1', '0', 'dog', 'True', '100032', 'A'],
+        [
+            '1-100210-B-36.wav',
+            '2',
+            '36',
+            'vacuum_cleaner',
+            'False',
+            '100210',
+            'B',
+        ],
+        [
+            '1-100210-A-36.wav',
+            '1',
+            '36',
+            'vacuum_cleaner',
+            'False',
+            '100210',
+            'A',
+        ],
+    ]
     write_csv(folder_path, 'meta', 'esc50.csv', headers, rows)
 
     spec = audio_spec.YAMNetSpec()

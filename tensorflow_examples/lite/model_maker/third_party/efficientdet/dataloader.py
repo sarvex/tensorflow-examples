@@ -366,14 +366,20 @@ class InputReader:
                       box_targets, num_positives, source_ids, image_scales,
                       boxes, is_crowds, areas, classes, image_masks):
     """Processes one batch of data."""
-    labels = {}
     # Count num_positives in a batch.
     num_positives_batch = tf.reduce_mean(num_positives)
-    labels['mean_num_positives'] = tf.reshape(
-        tf.tile(tf.expand_dims(num_positives_batch, 0), [
-            batch_size,
-        ]), [batch_size, 1])
-
+    labels = {
+        'mean_num_positives':
+        tf.reshape(
+            tf.tile(
+                tf.expand_dims(num_positives_batch, 0),
+                [
+                    batch_size,
+                ],
+            ),
+            [batch_size, 1],
+        )
+    }
     if params['data_format'] == 'channels_first':
       images = tf.transpose(images, [0, 3, 1, 2])
 
@@ -422,9 +428,7 @@ class InputReader:
                               input_context.input_pipeline_id)
     # Prefetch data from files.
     def _prefetch_dataset(filename):
-      if params.get('dataset_type', None) == 'sstable':
-        pass
-      else:
+      if params.get('dataset_type', None) != 'sstable':
         dataset = tf.data.TFRecordDataset(filename).prefetch(1)
       return dataset
 

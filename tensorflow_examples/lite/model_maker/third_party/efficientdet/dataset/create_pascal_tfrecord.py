@@ -200,60 +200,55 @@ def dict_to_tf_example(data,
         }
         ann_json_dict['annotations'].append(ann)
 
-  example = tf.train.Example(
-      features=tf.train.Features(
-          feature={
-              'image/height':
-                  tfrecord_util.int64_feature(height),
-              'image/width':
-                  tfrecord_util.int64_feature(width),
-              'image/filename':
-                  tfrecord_util.bytes_feature(data['filename'].encode('utf8')),
-              'image/source_id':
-                  tfrecord_util.bytes_feature(str(image_id).encode('utf8')),
-              'image/key/sha256':
-                  tfrecord_util.bytes_feature(key.encode('utf8')),
-              'image/encoded':
-                  tfrecord_util.bytes_feature(encoded_jpg),
-              'image/format':
-                  tfrecord_util.bytes_feature('jpeg'.encode('utf8')),
-              'image/object/bbox/xmin':
-                  tfrecord_util.float_list_feature(xmin),
-              'image/object/bbox/xmax':
-                  tfrecord_util.float_list_feature(xmax),
-              'image/object/bbox/ymin':
-                  tfrecord_util.float_list_feature(ymin),
-              'image/object/bbox/ymax':
-                  tfrecord_util.float_list_feature(ymax),
-              'image/object/area':
-                  tfrecord_util.float_list_feature(area),
-              'image/object/class/text':
-                  tfrecord_util.bytes_list_feature(classes_text),
-              'image/object/class/label':
-                  tfrecord_util.int64_list_feature(classes),
-              'image/object/difficult':
-                  tfrecord_util.int64_list_feature(difficult_obj),
-              'image/object/truncated':
-                  tfrecord_util.int64_list_feature(truncated),
-              'image/object/view':
-                  tfrecord_util.bytes_list_feature(poses),
-          }))
-  return example
+  return tf.train.Example(features=tf.train.Features(
+      feature={
+          'image/height':
+          tfrecord_util.int64_feature(height),
+          'image/width':
+          tfrecord_util.int64_feature(width),
+          'image/filename':
+          tfrecord_util.bytes_feature(data['filename'].encode('utf8')),
+          'image/source_id':
+          tfrecord_util.bytes_feature(str(image_id).encode('utf8')),
+          'image/key/sha256':
+          tfrecord_util.bytes_feature(key.encode('utf8')),
+          'image/encoded':
+          tfrecord_util.bytes_feature(encoded_jpg),
+          'image/format':
+          tfrecord_util.bytes_feature('jpeg'.encode('utf8')),
+          'image/object/bbox/xmin':
+          tfrecord_util.float_list_feature(xmin),
+          'image/object/bbox/xmax':
+          tfrecord_util.float_list_feature(xmax),
+          'image/object/bbox/ymin':
+          tfrecord_util.float_list_feature(ymin),
+          'image/object/bbox/ymax':
+          tfrecord_util.float_list_feature(ymax),
+          'image/object/area':
+          tfrecord_util.float_list_feature(area),
+          'image/object/class/text':
+          tfrecord_util.bytes_list_feature(classes_text),
+          'image/object/class/label':
+          tfrecord_util.int64_list_feature(classes),
+          'image/object/difficult':
+          tfrecord_util.int64_list_feature(difficult_obj),
+          'image/object/truncated':
+          tfrecord_util.int64_list_feature(truncated),
+          'image/object/view':
+          tfrecord_util.bytes_list_feature(poses),
+      }))
 
 
 def main(_):
   if FLAGS.set not in SETS:
-    raise ValueError('set must be in : {}'.format(SETS))
+    raise ValueError(f'set must be in : {SETS}')
   if FLAGS.year not in YEARS:
-    raise ValueError('year must be in : {}'.format(YEARS))
+    raise ValueError(f'year must be in : {YEARS}')
   if not FLAGS.output_path:
     raise ValueError('output_path cannot be empty.')
 
   data_dir = FLAGS.data_dir
-  years = ['VOC2007', 'VOC2012']
-  if FLAGS.year != 'merged':
-    years = [FLAGS.year]
-
+  years = [FLAGS.year] if FLAGS.year != 'merged' else ['VOC2007', 'VOC2012']
   output_dir = os.path.dirname(FLAGS.output_path)
   if not tf.io.gfile.exists(output_dir):
     tf.io.gfile.makedirs(output_dir)
@@ -282,7 +277,7 @@ def main(_):
   for year in years:
     example_class = list(label_map_dict.keys())[1]
     examples_path = os.path.join(data_dir, year, 'ImageSets', 'Main',
-                                 example_class + '_' + FLAGS.set + '.txt')
+                                 f'{example_class}_{FLAGS.set}.txt')
     examples_list = tfrecord_util.read_examples_list(examples_path)
     annotations_dir = os.path.join(data_dir, year, FLAGS.annotations_dir)
 
@@ -296,7 +291,7 @@ def main(_):
         break
       if idx % 100 == 0:
         logging.info('On image %d of %d', idx, len(examples_list))
-      path = os.path.join(annotations_dir, example + '.xml')
+      path = os.path.join(annotations_dir, f'{example}.xml')
       with tf.io.gfile.GFile(path, 'r') as fid:
         xml_str = fid.read()
       xml = etree.fromstring(xml_str)
@@ -318,7 +313,8 @@ def main(_):
 
   json_file_path = os.path.join(
       os.path.dirname(FLAGS.output_path),
-      'json_' + os.path.basename(FLAGS.output_path) + '.json')
+      f'json_{os.path.basename(FLAGS.output_path)}.json',
+  )
   with tf.io.gfile.GFile(json_file_path, 'w') as f:
     json.dump(ann_json_dict, f)
 

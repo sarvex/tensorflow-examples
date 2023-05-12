@@ -104,8 +104,7 @@ class RecommendationDataLoaderTest(tf.test.TestCase):
         ('label_movie_id', [batch_size, 1], tf.int32),
     ]
     for key, shape, dtype in expected_keys_shapes:
-      self.assertIn(key, features,
-                    'Expect key: {} in features {}'.format(key, features))
+      self.assertIn(key, features, f'Expect key: {key} in features {features}')
       v = features[key]
       self.assertListEqual(v.shape.as_list(), shape)
       self.assertEqual(v.dtype, dtype)

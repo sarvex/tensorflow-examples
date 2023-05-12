@@ -25,8 +25,7 @@ from keras.models import Model
 
 def preprocess(x):
   x = (x + 0.8) / 7.0
-  x = K.clip(x, -5, 5)
-  return x
+  return K.clip(x, -5, 5)
 
 
 def preprocess_raw(x):
@@ -115,7 +114,7 @@ def speech_model(model_type, input_size, num_classes=11, *args, **kwargs):
   if model_type == 'conv_1d_time_stacked':
     return conv_1d_time_stacked_model(input_size, num_classes)
   else:
-    raise ValueError('Invalid model: %s' % model_type)
+    raise ValueError(f'Invalid model: {model_type}')
 
 
 def prepare_model_settings(label_count,
@@ -137,14 +136,12 @@ def prepare_model_settings(label_count,
   else:
     spectrogram_length = 1 + int(length_minus_window / window_stride_samples)
 
-  if output_representation == 'mfcc':
+  if output_representation in ['mfcc', 'mfcc_and_raw']:
     fingerprint_size = num_log_mel_features * spectrogram_length
   elif output_representation == 'raw':
     fingerprint_size = desired_samples
   elif output_representation == 'spec':
     fingerprint_size = spectrogram_frequencies * spectrogram_length
-  elif output_representation == 'mfcc_and_raw':
-    fingerprint_size = num_log_mel_features * spectrogram_length
   return {
       'desired_samples': desired_samples,
       'window_size_samples': window_size_samples,

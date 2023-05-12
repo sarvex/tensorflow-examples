@@ -65,18 +65,18 @@ class Config(object):
       return
 
     for k, v in six.iteritems(config_dict):
-      if k not in self.__dict__:
-        if allow_new_keys:
-          self.__setattr__(k, v)
-        else:
-          raise KeyError('Key `{}` does not exist for overriding. '.format(k))
-      else:
+      if k in self.__dict__:
         if isinstance(self.__dict__[k], Config) and isinstance(v, dict):
           self.__dict__[k]._update(v, allow_new_keys)
         elif isinstance(self.__dict__[k], Config) and isinstance(v, Config):
           self.__dict__[k]._update(v.as_dict(), allow_new_keys)
         else:
           self.__setattr__(k, v)
+
+      elif allow_new_keys:
+        self.__setattr__(k, v)
+      else:
+        raise KeyError(f'Key `{k}` does not exist for overriding. ')
 
   def get(self, k, default_value=None):
     return self.__dict__.get(k, default_value)
@@ -99,20 +99,19 @@ class Config(object):
         config_dict = self.parse_from_yaml(config_dict_or_str)
       else:
         raise ValueError(
-            'Invalid string {}, must end with .yaml or contains "=".'.format(
-                config_dict_or_str))
+            f'Invalid string {config_dict_or_str}, must end with .yaml or contains "=".'
+        )
     elif isinstance(config_dict_or_str, dict):
       config_dict = config_dict_or_str
     else:
-      raise ValueError('Unknown value type: {}'.format(config_dict_or_str))
+      raise ValueError(f'Unknown value type: {config_dict_or_str}')
 
     self._update(config_dict, allow_new_keys)
 
   def parse_from_yaml(self, yaml_file_path: Text) -> Dict[Any, Any]:
     """Parses a yaml file and returns a dictionary."""
     with tf.io.gfile.GFile(yaml_file_path, 'r') as f:
-      config_dict = yaml.load(f, Loader=yaml.FullLoader)
-      return config_dict
+      return yaml.load(f, Loader=yaml.FullLoader)
 
   def save_to_yaml(self, yaml_file_path):
     """Write a dictionary into a yaml file."""
@@ -157,13 +156,10 @@ class Config(object):
 
   def as_dict(self):
     """Returns a dict representation."""
-    config_dict = {}
-    for k, v in six.iteritems(self.__dict__):
-      if isinstance(v, Config):
-        config_dict[k] = v.as_dict()
-      else:
-        config_dict[k] = copy.deepcopy(v)
-    return config_dict
+    return {
+        k: v.as_dict() if isinstance(v, Config) else copy.deepcopy(v)
+        for k, v in six.iteritems(self.__dict__)
+    }
     # pylint: enable=protected-access
 
 
@@ -477,7 +473,7 @@ def get_efficientdet_config(model_name='efficientdet-d1'):
   elif model_name in efficientdet_lite_param_dict:
     h.override(efficientdet_lite_param_dict[model_name])
   else:
-    raise ValueError('Unknown model name: {}'.format(model_name))
+    raise ValueError(f'Unknown model name: {model_name}')
 
   return h
 

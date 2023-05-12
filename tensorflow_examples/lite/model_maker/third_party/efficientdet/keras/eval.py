@@ -120,7 +120,7 @@ def main(_):
 
   if label_map:
     for i, cid in enumerate(sorted(label_map.keys())):
-      name = 'AP_/%s' % label_map[cid]
+      name = f'AP_/{label_map[cid]}'
       metric_dict[name] = metrics[i + len(evaluator.metric_names)]
   print(FLAGS.model_name, metric_dict)
 

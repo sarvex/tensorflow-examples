@@ -200,59 +200,56 @@ class Movenet(object):
     Returns:
       crop_region (dict): The crop region to run inference on.
     """
-    # Convert keypoint index to human-readable names.
-    target_keypoints = {}
-    for idx in range(len(BodyPart)):
-      target_keypoints[BodyPart(idx)] = [
-          keypoints[idx, 0] * image_height, keypoints[idx, 1] * image_width
-      ]
-
-    # Calculate crop region if the torso is visible.
-    if self._torso_visible(keypoints):
-      center_y = (target_keypoints[BodyPart.LEFT_HIP][0] +
-                  target_keypoints[BodyPart.RIGHT_HIP][0]) / 2
-      center_x = (target_keypoints[BodyPart.LEFT_HIP][1] +
-                  target_keypoints[BodyPart.RIGHT_HIP][1]) / 2
-
-      (max_torso_yrange, max_torso_xrange, max_body_yrange,
-       max_body_xrange) = self._determine_torso_and_body_range(
-           keypoints, target_keypoints, center_y, center_x)
-
-      crop_length_half = np.amax([
-          max_torso_xrange * Movenet._TORSO_EXPANSION_RATIO,
-          max_torso_yrange * Movenet._TORSO_EXPANSION_RATIO,
-          max_body_yrange * Movenet._BODY_EXPANSION_RATIO,
-          max_body_xrange * Movenet._BODY_EXPANSION_RATIO
-      ])
-
-      # Adjust crop length so that it is still within the image border
-      distances_to_border = np.array(
-          [center_x, image_width - center_x, center_y, image_height - center_y])
-      crop_length_half = np.amin(
-          [crop_length_half, np.amax(distances_to_border)])
-
-      # If the body is large enough, there's no need to apply cropping logic.
-      if crop_length_half > max(image_width, image_height) / 2:
-        return self.init_crop_region(image_height, image_width)
-      # Calculate the crop region that nicely covers the full body.
-      else:
-        crop_length = crop_length_half * 2
-      crop_corner = [center_y - crop_length_half, center_x - crop_length_half]
-      return {
-          'y_min':
-              crop_corner[0] / image_height,
-          'x_min':
-              crop_corner[1] / image_width,
-          'y_max': (crop_corner[0] + crop_length) / image_height,
-          'x_max': (crop_corner[1] + crop_length) / image_width,
-          'height': (crop_corner[0] + crop_length) / image_height -
-                    crop_corner[0] / image_height,
-          'width': (crop_corner[1] + crop_length) / image_width -
-                   crop_corner[1] / image_width
-      }
-    # Return the initial crop regsion if the torso isn't visible.
-    else:
+    target_keypoints = {
+        BodyPart(idx): [
+            keypoints[idx, 0] * image_height,
+            keypoints[idx, 1] * image_width,
+        ]
+        for idx in range(len(BodyPart))
+    }
+    if not self._torso_visible(keypoints):
       return self.init_crop_region(image_height, image_width)
+    center_y = (target_keypoints[BodyPart.LEFT_HIP][0] +
+                target_keypoints[BodyPart.RIGHT_HIP][0]) / 2
+    center_x = (target_keypoints[BodyPart.LEFT_HIP][1] +
+                target_keypoints[BodyPart.RIGHT_HIP][1]) / 2
+
+    (max_torso_yrange, max_torso_xrange, max_body_yrange,
+     max_body_xrange) = self._determine_torso_and_body_range(
+         keypoints, target_keypoints, center_y, center_x)
+
+    crop_length_half = np.amax([
+        max_torso_xrange * Movenet._TORSO_EXPANSION_RATIO,
+        max_torso_yrange * Movenet._TORSO_EXPANSION_RATIO,
+        max_body_yrange * Movenet._BODY_EXPANSION_RATIO,
+        max_body_xrange * Movenet._BODY_EXPANSION_RATIO
+    ])
+
+    # Adjust crop length so that it is still within the image border
+    distances_to_border = np.array(
+        [center_x, image_width - center_x, center_y, image_height - center_y])
+    crop_length_half = np.amin(
+        [crop_length_half, np.amax(distances_to_border)])
+
+    # If the body is large enough, there's no need to apply cropping logic.
+    if crop_length_half > max(image_width, image_height) / 2:
+      return self.init_crop_region(image_height, image_width)
+    # Calculate the crop region that nicely covers the full body.
+    else:
+      crop_length = crop_length_half * 2
+    crop_corner = [center_y - crop_length_half, center_x - crop_length_half]
+    return {
+        'y_min':
+            crop_corner[0] / image_height,
+        'x_min':
+            crop_corner[1] / image_width,
+        'y_max': (crop_corner[0] + crop_length) / image_height,
+        'x_max': (crop_corner[1] + crop_length) / image_width,
+        'height': (crop_corner[0] + crop_length) / image_height -
+                  crop_corner[0] / image_height,
+        'width': (crop_corner[1] + crop_length) / image_width -
+                 crop_corner[1] / image_width
+    }
 
   def _crop_and_resize(
       self, image: np.ndarray, crop_region: Dict[(str, float)],

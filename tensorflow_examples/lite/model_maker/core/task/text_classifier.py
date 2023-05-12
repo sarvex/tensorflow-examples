@@ -35,23 +35,26 @@ from tensorflow_examples.lite.model_maker.core.task.model_spec import text_spec
 
 def _get_bert_model_info(model_spec, vocab_file, label_file):
   return bert_metadata_writer.ClassifierSpecificInfo(
-      name=model_spec.name + ' text classifier',
+      name=f'{model_spec.name} text classifier',
       version='v1',
       description=bert_metadata_writer.DEFAULT_DESCRIPTION,
       input_names=bert_metadata_writer.bert_qa_inputs(
           ids_name=model_spec.tflite_input_name['ids'],
           mask_name=model_spec.tflite_input_name['mask'],
-          segment_ids_name=model_spec.tflite_input_name['segment_ids']),
+          segment_ids_name=model_spec.tflite_input_name['segment_ids'],
+      ),
       tokenizer_type=bert_metadata_writer.Tokenizer.BERT_TOKENIZER,
       vocab_file=vocab_file,
-      label_file=label_file)
+      label_file=label_file,
+  )
 
 
 def _get_model_info(model_name):
   return metadata_writer.ModelSpecificInfo(
-      name=model_name + ' text classifier',
+      name=f'{model_name} text classifier',
       description='Classify text into predefined categories.',
-      version='v1')
+      version='v1',
+  )
 
 
 @mm_export('text_classifier.TextClassifier')
@@ -204,8 +207,9 @@ class TextClassifier(classification_model.ClassificationModel):
     """
     model_spec = ms.get(model_spec)
     if compat.get_tf_behavior() not in model_spec.compat_tf_versions:
-      raise ValueError('Incompatible versions. Expect {}, but got {}.'.format(
-          model_spec.compat_tf_versions, compat.get_tf_behavior()))
+      raise ValueError(
+          f'Incompatible versions. Expect {model_spec.compat_tf_versions}, but got {compat.get_tf_behavior()}.'
+      )
 
     text_classifier = cls(
         model_spec, train_data.index_to_label, shuffle=shuffle)

@@ -87,7 +87,7 @@ def _at_least_x_are_equal(a, b, x):
 
 def _resize_image(image, image_size, method=None):
   if method is not None:
-    tf.logging.info('Use customized resize method {}'.format(method))
+    tf.logging.info(f'Use customized resize method {method}')
     return tf.image.resize([image], [image_size, image_size], method)[0]
   tf.logging.info('Use default resize_bicubic.')
   return tf.image.resize_bicubic([image], [image_size, image_size])[0]
@@ -191,7 +191,7 @@ def preprocess_for_train(image_bytes,
       image = autoaugment.distort_image_with_randaugment(
           image, randaug_num_layers, randaug_magnitude)
     else:
-      raise ValueError('Invalid value for augment_name: %s' % (augment_name))
+      raise ValueError(f'Invalid value for augment_name: {augment_name}')
 
     image = tf.cast(image, dtype=input_image_type)
 
